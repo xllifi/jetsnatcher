@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option java_package = "ru.xllifi.jetsnatcher.proto";
+option java_multiple_files = true;
+
+message Settings {
+  uint32 page_size = 1;
+  repeated Provider provider = 2;
+  uint32 doubleTapThreshold = 3;
+  bool showCardInfo = 4;
+  repeated string blacklistedTags = 5;
+}
+
+message Provider {
+  enum ProviderType {
+    GELBOORU = 0;
+    R34XXX = 1;
+  }
+  message Routes {
+    string base = 1;
+    string autocomplete = 2;
+    string posts = 3;
+    string tags = 4;
+    string comments = 5;
+    string auth_suffix = 6;
+  }
+
+  string name = 1;
+  ProviderType provider_type = 2;
+  Routes routes = 3;
+}
+

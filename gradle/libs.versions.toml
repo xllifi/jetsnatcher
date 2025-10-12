@@ -1,0 +1,88 @@
+[versions]
+agp = "8.12.3"
+kotlin = "2.2.20"
+coreKtx = "1.17.0"
+junit = "4.13.2"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+lifecycleRuntimeKtx = "2.9.4"
+activityCompose = "1.11.0"
+composeBom = "2025.09.00"
+nav3 = "1.0.0-alpha10"
+kotlinxSerialization = "1.9.0"
+kotlinxDatetime = "0.7.1"
+kotlinxCoroutines = "1.10.2"
+okhttp3 = "5.1.0"
+coil = "3.3.0"
+lifecycleViewmodelNavigation3 = "2.10.0-alpha04"
+koin = "4.1.1"
+jetbrainsKotlinJvm = "2.2.20"
+ktor = "3.3.0"
+junitJupiter = "5.8.1"
+material3 = "1.5.0-alpha04"
+materialIcons = "1.7.8"
+datastore = "1.1.7"
+protobuf = "4.32.1"
+protobufPlugin = "0.9.5"
+composehtml = "1.0.2"
+colormath = "3.6.1"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "materialIcons" }
+androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIcons" }
+androidx-nav3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "nav3" }
+androidx-nav3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "nav3" }
+androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNavigation3" }
+#kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
+kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinxSerialization" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp3" }
+coil3-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil3-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
+coil3-gif = { group = "io.coil-kt.coil3", name = "coil-gif", version.ref = "coil" }
+koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
+koin-compose-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
+koin-compose-viewmodel-navigation = { group = "io.insert-koin", name = "koin-compose-viewmodel-navigation", version.ref = "koin" }
+material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+androidx-datastore = { group = "androidx.datastore", name = "datastore", version.ref = "datastore" }
+protobuf-java = { group = "com.google.protobuf", name = "protobuf-java", version.ref = "protobuf" }
+protobuf-kotlin = { group = "com.google.protobuf", name = "protobuf-kotlin", version.ref = "protobuf" }
+composehtml = { group = "com.github.ireward", name = "compose-html", version.ref = "composehtml" }
+colormath = { group = "com.github.ajalt.colormath", name = "colormath", version.ref = "colormath" }
+colormath-compose = { group = "com.github.ajalt.colormath", name = "colormath-ext-jetpack-compose", version.ref = "colormath" }
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
+ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-serialization-kotlinx-xml = { group = "io.ktor", name = "ktor-serialization-kotlinx-xml", version.ref = "ktor" }
+ktor-client-mock = { group = "io.ktor", name = "ktor-client-mock", version.ref = "ktor" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junitJupiter" }
+
+[bundles]
+coil = ["okhttp", "coil3-compose", "coil3-okhttp", "coil3-gif"]
+kotlinx = ["kotlinx-datetime", "kotlinx-serialization-core", "kotlinx-coroutines"]
+ktor = ["ktor-client-core", "ktor-client-cio", "ktor-client-content-negotiation", "ktor-serialization-kotlinx-json", "ktor-serialization-kotlinx-xml"]
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
+
