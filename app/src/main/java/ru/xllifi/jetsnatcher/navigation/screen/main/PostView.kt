@@ -1,4 +1,4 @@
-package ru.xllifi.jetsnatcher.navigation.screen.browser
+package ru.xllifi.jetsnatcher.navigation.screen.main
 
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -181,7 +181,7 @@ fun SharedTransitionScope.PostView(
   ) {
     val pagerState = rememberPagerState(
       initialPage = uiState.selectedPostIndex,
-      pageCount = { uiState.searches.last().posts.size },
+      pageCount = { uiState.posts.size },
     )
     LaunchedEffect(pagerState.currentPage) {
       onSelectedPostChange(pagerState.currentPage)
@@ -196,7 +196,7 @@ fun SharedTransitionScope.PostView(
       state = pagerState,
       userScrollEnabled = pagerScrollEnabled,
     ) { index ->
-      val post by remember { derivedStateOf { uiState.searches.last().posts[index] } }
+      val post by remember { derivedStateOf { uiState.posts[index] } }
       val isSelected by remember { derivedStateOf { uiState.selectedPostIndex == index } }
       AllGestures(
         modifier = Modifier.align(Alignment.Center),
@@ -267,7 +267,7 @@ private fun SharedTransitionScope.PostImage(
 ) {
   val browserViewModel: BrowserViewModel = viewModel()
   val uiState by browserViewModel.uiState.collectAsState()
-  val posts by remember { derivedStateOf { uiState.searches.last().posts } }
+  val posts by remember { derivedStateOf { uiState.posts } }
   val post by remember { derivedStateOf { posts.first { it.id == postId } } }
 
   if ((post.hasNotes && post.notes == null) || post.tags == null) {
@@ -492,7 +492,7 @@ private fun PostInfo(
 ) {
   val browserViewModel: BrowserViewModel = viewModel()
   val uiState by browserViewModel.uiState.collectAsState()
-  val posts by remember { derivedStateOf { uiState.searches.last().posts } }
+  val posts by remember { derivedStateOf { uiState.posts } }
   val post by remember { derivedStateOf { posts.first { it.id == postId } } }
   val tags: List<Any> by remember { derivedStateOf { post.tags ?: post.unparsedTags } }
 

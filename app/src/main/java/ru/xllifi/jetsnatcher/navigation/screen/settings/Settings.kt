@@ -41,7 +41,11 @@ class SettingsNavKey : NavKey
 @Composable
 fun Settings(
   innerPadding: PaddingValues,
+  onEditProviders: () -> Unit,
 ) {
+  val settingsDataStore = LocalContext.current.settingsDataStore
+  val settingsState by settingsDataStore.data.collectAsState(SettingsSerializer.defaultValue)
+
   Column(
     modifier = Modifier
       .fillMaxSize()
@@ -57,8 +61,6 @@ fun Settings(
       style = MaterialTheme.typography.titleLargeEmphasized,
       textAlign = TextAlign.Center,
     )
-    val settingsDataStore = LocalContext.current.settingsDataStore
-    val settingsState by settingsDataStore.data.collectAsState(SettingsSerializer.defaultValue)
     val scope = rememberCoroutineScope()
     SettingSlider(
       "Page size",
@@ -111,8 +113,11 @@ fun Settings(
         }
       }
     )
-
-    val providers = settingsState.providerList
-    // TODO: providers list
+    Button(
+      onClick = onEditProviders
+    ) {
+      Text("Edit providers")
+    }
+    // tODO: setting button
   }
 }

@@ -1,6 +1,5 @@
-package ru.xllifi.jetsnatcher.navigation.screen.browser
+package ru.xllifi.jetsnatcher.navigation.screen.main
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.EnterTransition
@@ -15,7 +14,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,17 +35,9 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Comment
-import androidx.compose.material.icons.automirrored.outlined.Note
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
-import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material.icons.outlined.Animation
-import androidx.compose.material.icons.outlined.Comment
 import androidx.compose.material.icons.outlined.HighQuality
-import androidx.compose.material.icons.outlined.Note
-import androidx.compose.material.icons.outlined.Notes
-import androidx.compose.material.icons.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.ThumbUp
-import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -58,24 +48,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -97,22 +79,19 @@ import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.R
 import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.extensions.plus
-import ru.xllifi.jetsnatcher.extensions.pxToDp
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 import ru.xllifi.jetsnatcher.ui.theme.sizes
-import java.lang.Exception
-import java.nio.channels.UnresolvedAddressException
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedTransitionScope.PostGrid(
   modifier: Modifier = Modifier,
-  browserViewModel: BrowserViewModel,
+  viewModel: BrowserViewModel,
   innerPadding: PaddingValues = PaddingValues.Zero,
   onScrolledToBottom: () -> Unit,
 ) {
-  val uiState = browserViewModel.uiState.collectAsState().value
+  val uiState = viewModel.uiState.collectAsState().value
   val gridState = rememberLazyStaggeredGridState()
   LaunchedEffect(gridState.canScrollForward) {
     if (!gridState.canScrollForward) {
@@ -133,16 +112,16 @@ fun SharedTransitionScope.PostGrid(
     horizontalArrangement = Arrangement.spacedBy(8.dp),
     contentPadding = PaddingValues(8.dp) + innerPadding,
   ) {
-    itemsIndexed(uiState.searches.last().posts) { index, post ->
+    itemsIndexed(uiState.posts) { index, post ->
       val scope = rememberCoroutineScope()
       Card(
         modifier = Modifier
           .clip(RoundedCornerShape(MaterialTheme.sizes.roundingMedium))
           .clickable(!this@PostGrid.isTransitionActive) {
-            browserViewModel.selectPost(index)
+            viewModel.selectPost(index)
             scope.launch {
               awaitFrame()
-              browserViewModel.expandPost(to = true)
+              viewModel.expandPost(to = true)
             }
           },
         post = post,
@@ -168,7 +147,7 @@ fun SharedTransitionScope.PostGrid(
           LoadingIndicator()
         }
         AnimatedVisibility(
-          visible = uiState.searches.last().noMorePosts,
+          visible = uiState.noMorePosts,
           enter = scaleIn() + fadeIn(),
           exit = scaleOut() + fadeOut(),
         ) {
@@ -184,7 +163,7 @@ fun SharedTransitionScope.PostGrid(
             Button(
               onClick = {
                 GlobalScope.launch {
-                  browserViewModel.loadPosts(context)
+                  viewModel.loadPosts()
                 }
               }
             ) {
@@ -211,7 +190,7 @@ fun PostGridPreview() {
       SharedTransitionLayout {
         val browserViewModel = viewModel<BrowserViewModel>()
         PostGrid(
-          browserViewModel = browserViewModel,
+          viewModel = browserViewModel,
           onScrolledToBottom = {},
         )
       }

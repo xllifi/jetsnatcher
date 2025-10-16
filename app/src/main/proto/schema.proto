@@ -18,11 +18,13 @@ message Provider {
   }
   message Routes {
     string base = 1;
-    string autocomplete = 2;
-    string posts = 3;
-    string tags = 4;
-    string comments = 5;
-    string auth_suffix = 6;
+    string publicFacingPostPage = 2;
+    string autocomplete = 3;
+    string posts = 4;
+    string tags = 5;
+    string comments = 6;
+    string notes = 7;
+    string authSuffix = 8;
   }
 
   string name = 1;

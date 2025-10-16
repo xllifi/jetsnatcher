@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
@@ -21,6 +22,10 @@ import androidx.navigation3.ui.LocalNavAnimatedContentScope
 @Suppress("FunctionName")
 public fun <T : Any> RoundedCornerNavEntryDecorator(): NavEntryDecorator<T> {
   val decorator: @Composable (entry: NavEntry<T>) -> Unit = { entry ->
+    var color = entry.metadata["BACKGROUND_COLOR"]
+    if (color == null || color !is Color) {
+      color = MaterialTheme.colorScheme.background
+    }
     AnimateCornerSize(
       animatedVisibilityScope = LocalNavAnimatedContentScope.current,
       sizeWhenHidden = 48.dp,
@@ -30,7 +35,7 @@ public fun <T : Any> RoundedCornerNavEntryDecorator(): NavEntryDecorator<T> {
         modifier = Modifier
           .fillMaxSize()
           .clip(RoundedCornerShape(size))
-          .background(MaterialTheme.colorScheme.background)
+          .background(color)
       ) {
         entry.Content()
       }

@@ -14,20 +14,37 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiationConfig
 import io.ktor.client.request.get
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.request
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.xml.xml
 import io.ktor.serialization.kotlinx.json.json
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.serialization.XML
 import ru.xllifi.booru_api.Note
+import ru.xllifi.booru_api.Providers
+import ru.xllifi.booru_api.errors.UnauthorizedException
 import ru.xllifi.booru_api.toUnixTimestamp
 
 class Rule34xxx(
   override var httpClient: HttpClient = HttpClient(CIO) { install(ContentNegotiation, defaultContentConfig) },
   override var routes: Routes = defaultRoutes,
 ) : Provider(httpClient, routes) {
+  suspend fun checkBadStatus(response: HttpResponse) {
+    if (response.status == HttpStatusCode.Unauthorized) {
+      throw UnauthorizedException(
+        providerType = Providers.Rule34xxx,
+        url = response.request.url.toString(),
+        respBody = response.bodyAsText(),
+      )
+    }
+  }
+
   override suspend fun getAutoComplete(tagPart: String): List<Tag> {
     val response = httpClient.get(this.routes.parseAutocomplete(tagPart))
+    checkBadStatus(response)
     val tags: List<Rule34xxxAutocompleteTag> = response.body()
     return tags.map { it.toGenericTag() }
   }
@@ -38,18 +55,21 @@ class Rule34xxx(
     limit: Int,
   ): List<Post> {
     val response = httpClient.get(this.routes.parsePosts(tags, page, limit))
+    checkBadStatus(response)
     val posts: List<Rule34xxxPost> = response.body()
     return posts.map { it.toGenericPost(this.routes) }
   }
 
   override suspend fun getComments(postId: Int): List<Comment> {
     val response = httpClient.get(this.routes.parseComments(postId))
+    checkBadStatus(response)
     val body: List<Rule34xxxComment> = response.body()
     return body.map { it.toGenericComment() }
   }
 
   override suspend fun getNotes(postId: Int): List<Note>? {
     val response = httpClient.get(this.routes.parseComments(postId))
+    checkBadStatus(response)
     val body: List<Rule34xxxNote> = response.body()
     return body.map { it.toGenericNote() }
   }

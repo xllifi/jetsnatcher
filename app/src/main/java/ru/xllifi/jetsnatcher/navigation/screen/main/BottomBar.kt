@@ -1,6 +1,5 @@
-package ru.xllifi.jetsnatcher.navigation.screen.browser
+package ru.xllifi.jetsnatcher.navigation.screen.main
 
-import android.provider.Browser
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,17 +8,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,8 +41,8 @@ fun BottomBar(
     start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
     end = innerPadding.calculateEndPadding(LocalLayoutDirection.current)
   )
-  val browserViewModel = viewModel<BrowserViewModel>()
-  val uiState by browserViewModel.uiState.collectAsState()
+  val viewModel = viewModel<BrowserViewModel>()
+  val uiState by viewModel.uiState.collectAsState()
   Row(
     modifier = modifier
       .fillMaxWidth()
@@ -71,7 +64,7 @@ fun BottomBar(
       horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      items(uiState.searches.last().searchTags) { tag ->
+      items(viewModel.searchTags) { tag ->
         Tag(
           tag,
           baseFgColor = MaterialTheme.colorScheme.onPrimary,

@@ -14,10 +14,17 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiationConfig
 import io.ktor.client.request.get
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.request
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.cio.Response
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.serialization.kotlinx.xml.xml
 import ru.xllifi.booru_api.Note
+import ru.xllifi.booru_api.Providers
+import ru.xllifi.booru_api.errors.UnauthorizedException
 import ru.xllifi.booru_api.toUnixTimestamp
 
 class Gelbooru(
@@ -26,6 +33,16 @@ class Gelbooru(
   },
   override var routes: Routes = defaultRoutes,
 ) : Provider(httpClient, routes) {
+  suspend fun checkBadStatus(response: HttpResponse) {
+    if (response.status == HttpStatusCode.Unauthorized) {
+      throw UnauthorizedException(
+        providerType = Providers.Gelbooru,
+        url = response.request.url.toString(),
+        respBody = response.bodyAsText(),
+      )
+    }
+  }
+
   override suspend fun getAutoComplete(tagPart: String): List<Tag> {
     val response = httpClient.get(this.routes.parseAutocomplete(tagPart))
     val tags: List<GelbooruAutocompleteTag> = response.body()
@@ -38,6 +55,7 @@ class Gelbooru(
     limit: Int,
   ): List<Post> {
     val response = httpClient.get(this.routes.parsePosts(tags, page, limit))
+    checkBadStatus(response)
     val resp: PostsResponse = response.body()
     return resp.posts.map { it.toGenericPost(this.routes) }
   }
@@ -48,6 +66,7 @@ class Gelbooru(
 
   override suspend fun getNotes(postId: Int): List<Note>? {
     val response = httpClient.get(this.routes.parseNotes(postId))
+    checkBadStatus(response)
     val body: List<GelbooruNote> = response.body()
     return body.map { it.toGenericNote() }
   }
@@ -58,6 +77,7 @@ class Gelbooru(
     limit: Int,
   ): List<Tag> {
     val response = httpClient.get(this.routes.parseTags(tags, page, limit))
+    checkBadStatus(response)
     val body: List<GelbooruTag> = response.body()
     return body.map { it.toGenericTag() }
   }

@@ -21,6 +21,12 @@ enum class Providers {
       Gelbooru -> "Gelbooru"
     }
   }
+  fun getDefaultRoutes(): Routes {
+    return when (this) {
+      Rule34xxx -> ru.xllifi.booru_api.rule34xxx.Rule34xxx.defaultRoutes
+      Gelbooru -> ru.xllifi.booru_api.gelbooru.Gelbooru.defaultRoutes
+    }
+  }
 }
 
 private val providers: Map<Providers, ProviderConstructor> = mapOf(

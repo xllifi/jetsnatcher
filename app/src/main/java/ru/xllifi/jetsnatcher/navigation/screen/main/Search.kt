@@ -1,10 +1,8 @@
-package ru.xllifi.jetsnatcher.navigation.screen.search
+package ru.xllifi.jetsnatcher.navigation.screen.main
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideOut
 import androidx.compose.foundation.background
@@ -47,8 +45,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,56 +53,36 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.onPlaced
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation3.runtime.NavKey
-import coil3.size.Size
-import kotlinx.serialization.Serializable
+import kotlinx.coroutines.flow.first
 import ru.xllifi.booru_api.Tag
 import ru.xllifi.booru_api.TagCategory
-import ru.xllifi.booru_api.gelbooru.Gelbooru
 import ru.xllifi.jetsnatcher.extensions.FullPreview
-import ru.xllifi.jetsnatcher.extensions.conditional
-import ru.xllifi.jetsnatcher.extensions.dpToPx
-import ru.xllifi.jetsnatcher.navigation.screen.browser.BrowserViewModel
-import ru.xllifi.jetsnatcher.navigation.screen.browser.SearchData
+import ru.xllifi.jetsnatcher.extensions.toReal
+import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.components.Tag
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
-
-@Serializable
-object SearchNavKey : NavKey
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun Search(
-  browserViewModel: BrowserViewModel,
+  providerIndex: Int,
+  searchTags: List<Tag>,
   innerPadding: PaddingValues,
-  onNewSearch: () -> Unit,
+  onNewSearch: (providerIndex: Int, searchTags: List<Tag>) -> Unit,
 ) {
-  val uiState by browserViewModel.uiState.collectAsState()
-  val currentSearch = uiState.searches.last()
-  val mutableTags = remember { currentSearch.searchTags.toMutableStateList() }
+  val mutableTags = remember { searchTags.toMutableStateList() }
   var autocompleteTags by remember { mutableStateOf(emptyList<Tag>()) }
 
   Box(
@@ -172,9 +148,10 @@ fun Search(
         enter = fadeIn(),
         exit = fadeOut(),
       ) {
+        // TODO: uncomment and fix
         AutocompleteTags(
+          providerIndex = providerIndex,
           modifier = Modifier.padding(vertical = 12.dp),
-          search = currentSearch,
           tagPart = value,
           autocompleteTags = autocompleteTags,
           onNewAutocompleteTags = { autocompleteTags = it },
@@ -198,37 +175,32 @@ fun Search(
           .fillMaxSize()
       ) {
         SearchFab {
-          browserViewModel.newSearch(
-            SearchData(
-              searchTags = mutableTags,
-              provider = currentSearch.provider,
-            )
-          )
           keyboardController?.hide()
-          onNewSearch()
+          onNewSearch(providerIndex, mutableTags)
         }
       }
     }
   }
 }
 
-@FullPreview
-@Composable
-fun SearchPreview() {
-  JetSnatcherTheme {
-    Box(
-      modifier = Modifier
-        .fillMaxSize()
-        .background(MaterialTheme.colorScheme.background)
-    ) {
-      Search(
-        browserViewModel = viewModel(),
-        innerPadding = PaddingValues(0.dp),
-        onNewSearch = {}
-      )
-    }
-  }
-}
+// TODO: uncomment and fix
+//@FullPreview
+//@Composable
+//fun SearchPreview() {
+//  JetSnatcherTheme {
+//    Box(
+//      modifier = Modifier
+//        .fillMaxSize()
+//        .background(MaterialTheme.colorScheme.background)
+//    ) {
+//      Search(
+//        searchData = SearchData(providerIndex = 0),
+//        innerPadding = PaddingValues(0.dp),
+//        onNewSearch = {}
+//      )
+//    }
+//  }
+//}
 
 @Composable
 private fun TextField(
@@ -368,14 +340,17 @@ fun SearchTagsFlowRow(
 @Composable
 fun AutocompleteTags(
   modifier: Modifier = Modifier,
-  search: SearchData,
+  providerIndex: Int,
   tagPart: String,
   autocompleteTags: List<Tag>,
   onNewAutocompleteTags: (newAc: List<Tag>) -> Unit,
   onTagClick: (tag: Tag) -> Unit,
 ) {
+  val context = LocalContext.current
   LaunchedEffect(tagPart) {
-    onNewAutocompleteTags(search.provider.getAutoComplete(tagPart.replace(" ", "_")) ?: emptyList())
+    val settings = context.settingsDataStore.data.first()
+    val provider = settings.getProvider(providerIndex).toReal()
+    onNewAutocompleteTags(provider.getAutoComplete(tagPart.replace(" ", "_")) ?: emptyList())
   }
   LazyColumn(
     modifier = modifier.clip(MaterialTheme.shapes.medium),
@@ -451,7 +426,6 @@ fun LazyItemScope.AutocompleteTag(
 fun AutocompleteTagsPreview() {
   JetSnatcherTheme {
     AutocompleteTags(
-      search = SearchData(provider = Gelbooru()),
       tagPart = "hira",
       autocompleteTags = listOf(
         Tag(
@@ -499,6 +473,7 @@ fun AutocompleteTagsPreview() {
       ),
       onNewAutocompleteTags = {},
       onTagClick = {},
+      providerIndex = 0,
     )
   }
 }

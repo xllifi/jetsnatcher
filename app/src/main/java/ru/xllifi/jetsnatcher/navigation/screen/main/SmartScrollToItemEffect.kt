@@ -1,4 +1,4 @@
-package ru.xllifi.jetsnatcher.navigation.screen.browser
+package ru.xllifi.jetsnatcher.navigation.screen.main
 
 import android.util.Log
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
