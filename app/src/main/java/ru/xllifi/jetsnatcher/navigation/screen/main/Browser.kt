@@ -28,6 +28,10 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import ru.xllifi.booru_api.Tag
 import ru.xllifi.jetsnatcher.extensions.rememberRoundedCornerNavEntryDecorator
+import ru.xllifi.jetsnatcher.navigation.screen.main.post_grid.PostGrid
+import ru.xllifi.jetsnatcher.navigation.screen.main.post_view.PostToolbarActions
+import ru.xllifi.jetsnatcher.navigation.screen.main.post_view.PostView
+import ru.xllifi.jetsnatcher.navigation.screen.main.search.Search
 
 @Serializable
 data class BrowserNavKey(

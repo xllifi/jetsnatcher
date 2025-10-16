@@ -1,4 +1,4 @@
-package ru.xllifi.jetsnatcher.navigation.screen.main
+package ru.xllifi.jetsnatcher.navigation.screen.main.post_grid
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -79,6 +79,7 @@ import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.R
 import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.extensions.plus
+import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserViewModel
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 import ru.xllifi.jetsnatcher.ui.theme.sizes

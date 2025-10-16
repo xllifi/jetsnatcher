@@ -1,4 +1,4 @@
-package ru.xllifi.jetsnatcher.navigation.screen.main
+package ru.xllifi.jetsnatcher.navigation.screen.main.search
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
