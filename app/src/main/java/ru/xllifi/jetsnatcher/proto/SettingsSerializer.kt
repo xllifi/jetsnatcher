@@ -6,6 +6,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.Serializer
 import androidx.datastore.dataStore
 import com.google.protobuf.InvalidProtocolBufferException
+import ru.xllifi.booru_api.gelbooru.Gelbooru
 import java.io.InputStream
 import java.io.OutputStream
 

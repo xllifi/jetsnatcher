@@ -19,11 +19,10 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.client.statement.request
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.cio.Response
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.serialization.kotlinx.xml.xml
 import ru.xllifi.booru_api.Note
-import ru.xllifi.booru_api.Providers
+import ru.xllifi.booru_api.ProviderType
 import ru.xllifi.booru_api.errors.UnauthorizedException
 import ru.xllifi.booru_api.toUnixTimestamp
 
@@ -32,17 +31,7 @@ class Gelbooru(
     install(ContentNegotiation, defaultContentConfig)
   },
   override var routes: Routes = defaultRoutes,
-) : Provider(httpClient, routes) {
-  suspend fun checkBadStatus(response: HttpResponse) {
-    if (response.status == HttpStatusCode.Unauthorized) {
-      throw UnauthorizedException(
-        providerType = Providers.Gelbooru,
-        url = response.request.url.toString(),
-        respBody = response.bodyAsText(),
-      )
-    }
-  }
-
+) : Provider(httpClient, routes, ProviderType.Gelbooru) {
   override suspend fun getAutoComplete(tagPart: String): List<Tag> {
     val response = httpClient.get(this.routes.parseAutocomplete(tagPart))
     val tags: List<GelbooruAutocompleteTag> = response.body()

@@ -22,15 +22,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import ru.xllifi.jetsnatcher.extensions.FullPreview
+import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.components.Tag
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
 @Composable
 fun BottomBar(
+  viewModel: BrowserViewModel,
   modifier: Modifier = Modifier,
   innerPadding: PaddingValues,
   onClick: () -> Unit,
@@ -41,8 +46,8 @@ fun BottomBar(
     start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
     end = innerPadding.calculateEndPadding(LocalLayoutDirection.current)
   )
-  val viewModel = viewModel<BrowserViewModel>()
   val uiState by viewModel.uiState.collectAsState()
+
   Row(
     modifier = modifier
       .fillMaxWidth()
@@ -57,6 +62,7 @@ fun BottomBar(
     LazyRow(
       modifier = Modifier
         .weight(1f)
+        .height(64.dp)
         .clip(CircleShape)
         .background(MaterialTheme.colorScheme.surfaceContainerLow)
         .padding(8.dp)
@@ -91,9 +97,19 @@ fun BottomBar(
 @Composable
 fun BottomBarPreview() {
   JetSnatcherTheme {
+    val context = LocalContext.current
+    val settings = runBlocking { context.settingsDataStore.data.first() }
+    val viewModel: BrowserViewModel = viewModel(
+      factory = BrowserViewModelFactory(
+        settings,
+        0,
+        emptyList()
+      )
+    )
     BottomBar(
+      viewModel = viewModel,
       innerPadding = PaddingValues.Zero,
-      onClick = {}
+      onClick = {},
     )
   }
 }

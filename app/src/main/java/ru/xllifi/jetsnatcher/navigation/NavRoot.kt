@@ -177,7 +177,7 @@ fun NavRoot(
           selected = backStack.last()::class == SettingsNavKey::class,
           onClick = {
             if (backStack.last()::class != SettingsNavKey::class) {
-              backStack.add(SettingsNavKey())
+              backStack.add(SettingsNavKey)
               scope.launch {
                 drawerState.close()
               }
@@ -200,10 +200,8 @@ fun NavRoot(
           Browser(
             providerIndex = key.providerIndex,
             searchTags = key.searchTags,
+            topBackStack = backStack,
             innerPadding = innerPadding,
-            onNewSearch = { providerIndex, searchTags ->
-              backStack.add(BrowserNavKey(providerIndex, searchTags))
-            },
           )
         }
         entry<SettingsNavKey> { key ->
@@ -279,7 +277,7 @@ fun NavRoot(
       FloatingActionButtonMenuItem(
         onClick = {
           fabMenuExpanded = false
-          backStack.add(SettingsNavKey())
+          backStack.add(SettingsNavKey)
         },
         text = {
           Text("Settings")

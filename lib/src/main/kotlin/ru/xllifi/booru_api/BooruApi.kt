@@ -1,17 +1,20 @@
 package ru.xllifi.booru_api
 
-import ru.xllifi.booru_api.gelbooru.Gelbooru
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.request
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.serialization.kotlinx.xml.xml
 import kotlinx.serialization.Serializable
-import ru.xllifi.booru_api.rule34xxx.Rule34xxx
+import ru.xllifi.booru_api.errors.UnauthorizedException
 
 typealias ProviderConstructor = (httpClient: HttpClient, routes: Routes) -> Provider
 
-enum class Providers {
+enum class ProviderType {
   Rule34xxx,
   Gelbooru;
 
@@ -29,15 +32,6 @@ enum class Providers {
   }
 }
 
-private val providers: Map<Providers, ProviderConstructor> = mapOf(
-  Providers.Rule34xxx to ::Rule34xxx,
-  Providers.Gelbooru to ::Gelbooru,
-)
-
-fun getProviderCtor(provider: Providers): ProviderConstructor? {
-  return providers[provider]
-}
-
 abstract class Provider(
   open var httpClient: HttpClient = HttpClient(CIO) {
     install(ContentNegotiation) {
@@ -46,7 +40,17 @@ abstract class Provider(
     }
   },
   open var routes: Routes,
+  open var type: ProviderType,
 ) {
+  suspend fun checkBadStatus(response: HttpResponse) {
+    if (response.status == HttpStatusCode.Unauthorized) {
+      throw UnauthorizedException(
+        providerType = type,
+        url = response.request.url.toString(),
+        respBody = response.bodyAsText(),
+      )
+    }
+  }
   abstract suspend fun getAutoComplete(tagPart: String): List<Tag>?
   abstract suspend fun getPosts(tags: List<String>, page: Int = 0, limit: Int = 100): List<Post>?
   abstract suspend fun getComments(postId: Int): List<Comment>?

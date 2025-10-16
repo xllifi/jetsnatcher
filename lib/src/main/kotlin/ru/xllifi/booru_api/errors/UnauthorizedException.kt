@@ -1,9 +1,9 @@
 package ru.xllifi.booru_api.errors
 
-import ru.xllifi.booru_api.Providers
+import ru.xllifi.booru_api.ProviderType
 
 class UnauthorizedException(
-    val providerType: Providers,
+    val providerType: ProviderType,
     val url: String,
     val respBody: String,
 ) : Exception() {

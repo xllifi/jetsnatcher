@@ -1,21 +1,16 @@
 package ru.xllifi.jetsnatcher.navigation.screen.main
 
-import android.content.Context
 import android.util.Log
-import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.runBlocking
 import ru.xllifi.booru_api.Post
 import ru.xllifi.booru_api.Provider
 import ru.xllifi.booru_api.Tag
-import ru.xllifi.booru_api.gelbooru.Gelbooru
 import ru.xllifi.jetsnatcher.extensions.toReal
-import ru.xllifi.jetsnatcher.proto.settingsDataStore
+import ru.xllifi.jetsnatcher.proto.Settings
 
 data class BrowserUiState(
   var posts: List<Post> = emptyList(),
@@ -26,20 +21,18 @@ data class BrowserUiState(
 
   val selectedPostIndex: Int = 0,
   val expandPost: Boolean = false,
+
+  val loadPostsError: Exception? = null,
 )
 
 class BrowserViewModel(
-  context: Context,
-  val providerIndex: Int,
-  val searchTags: List<Tag>
+  val settings: Settings,
+  val provider: Provider,
+  val searchTags: List<Tag>,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(BrowserUiState())
   val uiState = _uiState.asStateFlow()
 
-  private val _settings = runBlocking {
-    context.settingsDataStore.data.first()
-  }
-  private val _provider = _settings.getProvider(providerIndex).toReal()
 
   fun selectPost(index: Int) {
     _uiState.update {
@@ -66,21 +59,24 @@ class BrowserViewModel(
       )
     }
 
-    Log.i(
-      "LOAD_POSTS",
-      "Loading with provider: $_provider (proto ${_settings.getProvider(providerIndex)})"
-    )
-    val newPosts = _provider.getPosts(
-      tags = searchTags.map { it.value },
-      limit = _settings.pageSize,
-      page = _uiState.value.page,
-    ) ?: emptyList()
+    var error: Exception? = null
+    val newPosts = try {
+      provider.getPosts(
+        tags = searchTags.map { it.value },
+        limit = settings.pageSize,
+        page = _uiState.value.page,
+      )
+    } catch (e: Exception) {
+      error = e
+      null
+    } ?: emptyList()
 
     _uiState.update {
       it.copy(
         isLoadingNewPosts = false,
         posts = it.posts + newPosts,
         noMorePosts = newPosts.isEmpty(),
+        loadPostsError = error,
       )
     }
   }
@@ -96,12 +92,12 @@ class BrowserViewModel(
 
     val newPost = post.copy(
       tags = if (post.tags == null) {
-        post.parseTags(_provider)
+        post.parseTags(provider)
       } else {
         post.tags
       },
       notes = if (post.hasNotes) {
-        post.parseNotes(_provider)
+        post.parseNotes(provider)
       } else null
     )
 
@@ -120,10 +116,13 @@ class BrowserViewModel(
 }
 
 class BrowserViewModelFactory(
-  private val context: Context,
+  private val settings: Settings,
   private val providerIndex: Int,
   private val searchTags: List<Tag>
 ) : ViewModelProvider.NewInstanceFactory() {
-  @Suppress("UNCHECKED_CAST")
-  override fun <T : ViewModel> create(modelClass: Class<T>): T = BrowserViewModel(context, providerIndex, searchTags) as T
+  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    val provider = settings.getProvider(providerIndex).toReal()
+    @Suppress("UNCHECKED_CAST")
+    return BrowserViewModel(settings, provider, searchTags) as T
+  }
 }

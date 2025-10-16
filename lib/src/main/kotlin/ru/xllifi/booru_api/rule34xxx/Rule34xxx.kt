@@ -24,24 +24,14 @@ import io.ktor.serialization.kotlinx.json.json
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.serialization.XML
 import ru.xllifi.booru_api.Note
-import ru.xllifi.booru_api.Providers
+import ru.xllifi.booru_api.ProviderType
 import ru.xllifi.booru_api.errors.UnauthorizedException
 import ru.xllifi.booru_api.toUnixTimestamp
 
 class Rule34xxx(
   override var httpClient: HttpClient = HttpClient(CIO) { install(ContentNegotiation, defaultContentConfig) },
   override var routes: Routes = defaultRoutes,
-) : Provider(httpClient, routes) {
-  suspend fun checkBadStatus(response: HttpResponse) {
-    if (response.status == HttpStatusCode.Unauthorized) {
-      throw UnauthorizedException(
-        providerType = Providers.Rule34xxx,
-        url = response.request.url.toString(),
-        respBody = response.bodyAsText(),
-      )
-    }
-  }
-
+) : Provider(httpClient, routes, ProviderType.Rule34xxx) {
   override suspend fun getAutoComplete(tagPart: String): List<Tag> {
     val response = httpClient.get(this.routes.parseAutocomplete(tagPart))
     checkBadStatus(response)

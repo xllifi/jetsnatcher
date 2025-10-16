@@ -75,6 +75,7 @@ import kotlinx.coroutines.launch
 import ru.xllifi.booru_api.Image
 import ru.xllifi.booru_api.Post
 import ru.xllifi.booru_api.Rating
+import ru.xllifi.booru_api.errors.UnauthorizedException
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.R
 import ru.xllifi.jetsnatcher.extensions.conditional
@@ -90,13 +91,14 @@ fun SharedTransitionScope.PostGrid(
   modifier: Modifier = Modifier,
   viewModel: BrowserViewModel,
   innerPadding: PaddingValues = PaddingValues.Zero,
-  onScrolledToBottom: () -> Unit,
+  onLoadPostsRequest: () -> Unit,
+  onOpenSettings: () -> Unit,
 ) {
   val uiState = viewModel.uiState.collectAsState().value
   val gridState = rememberLazyStaggeredGridState()
   LaunchedEffect(gridState.canScrollForward) {
     if (!gridState.canScrollForward) {
-      onScrolledToBottom()
+      onLoadPostsRequest()
     }
   }
   SmartScrollToItemEffect(
@@ -159,7 +161,6 @@ fun SharedTransitionScope.PostGrid(
               .background(MaterialTheme.colorScheme.surfaceContainer)
               .padding(16.dp),
           ) {
-            val context = LocalContext.current
             Text("No more posts!")
             Button(
               onClick = {
@@ -169,6 +170,43 @@ fun SharedTransitionScope.PostGrid(
               }
             ) {
               Text("Retry")
+            }
+          }
+        }
+        AnimatedVisibility(
+          visible = uiState.loadPostsError != null,
+          enter = scaleIn() + fadeIn(),
+          exit = scaleOut() + fadeOut(),
+        ) {
+          Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+              .clip(MaterialTheme.shapes.medium)
+              .background(MaterialTheme.colorScheme.errorContainer)
+              .padding(16.dp),
+          ) {
+            Text(
+              text = if (uiState.loadPostsError is UnauthorizedException) {
+                "${viewModel.provider.type.getFormattedName()} responded 401 Unauthorized. Check the API key assigned to this provider."
+              } else {
+                uiState.loadPostsError.toString()
+              }
+            )
+            Row(
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              if (uiState.loadPostsError is UnauthorizedException) {
+                Button(
+                  onClick = onOpenSettings
+                ) {
+                  Text("Open settings")
+                }
+              }
+              Button(
+                onClick = onLoadPostsRequest
+              ) {
+                Text("Retry")
+              }
             }
           }
         }
@@ -192,7 +230,8 @@ fun PostGridPreview() {
         val browserViewModel = viewModel<BrowserViewModel>()
         PostGrid(
           viewModel = browserViewModel,
-          onScrolledToBottom = {},
+          onLoadPostsRequest = {},
+          onOpenSettings = {},
         )
       }
     }

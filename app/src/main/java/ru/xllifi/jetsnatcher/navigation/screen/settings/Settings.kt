@@ -35,7 +35,7 @@ import ru.xllifi.jetsnatcher.ui.components.SettingSlider
 import ru.xllifi.jetsnatcher.ui.components.SettingSwitch
 
 @Serializable
-class SettingsNavKey : NavKey
+object SettingsNavKey : NavKey
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

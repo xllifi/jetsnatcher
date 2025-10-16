@@ -1,6 +1,5 @@
 package ru.xllifi.jetsnatcher.navigation.screen.settings
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,8 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
-import ru.xllifi.booru_api.Providers
-import ru.xllifi.booru_api.Routes
+import ru.xllifi.booru_api.ProviderType
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.extensions.toProto
 import ru.xllifi.jetsnatcher.proto.Provider
@@ -108,7 +105,7 @@ fun ProviderInfoDialog(
   provider: Provider? = null,
   onDone: (newProvider: Provider) -> Unit,
   onDismissRequest: () -> Unit,
-  providerType: Providers,
+  providerType: ProviderType,
   /** This should show [ProviderTypeDialog] */
   onSelectProviderType: () -> Unit,
 ) {
@@ -128,7 +125,7 @@ fun ProviderInfoDialog(
 fun ProviderInfoDialogContent(
   provider: Provider? = null,
   onDone: (newProvider: Provider) -> Unit,
-  providerType: Providers,
+  providerType: ProviderType,
   onSelectProviderType: () -> Unit,
 ) {
   var temporaryProvider by remember { mutableStateOf(provider?.toTemporary() ?: TemporaryProvider()) }
@@ -280,7 +277,7 @@ fun Provider.toTemporary(): TemporaryProvider {
 @FullPreview
 fun ProviderInfoDialogContentPreview() {
   JetSnatcherTheme {
-    var providerType by remember { mutableStateOf(Providers.Gelbooru) }
+    var providerType by remember { mutableStateOf(ProviderType.Gelbooru) }
     ProviderInfoDialogContent(
       onDone = {},
       providerType = providerType,
@@ -292,7 +289,7 @@ fun ProviderInfoDialogContentPreview() {
 @Composable
 fun ProviderTypeDialog(
   onDismissRequest: () -> Unit,
-  onSelectProvider: (provider: Providers) -> Unit,
+  onSelectProvider: (provider: ProviderType) -> Unit,
 ) {
   Dialog(
     onDismissRequest = onDismissRequest,
@@ -306,7 +303,7 @@ fun ProviderTypeDialog(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ProviderTypeDialogContent(
-  onSelectProvider: (provider: Providers) -> Unit,
+  onSelectProvider: (provider: ProviderType) -> Unit,
 ) {
   Column(
     modifier = Modifier
@@ -331,7 +328,7 @@ private fun ProviderTypeDialogContent(
         .clip(MaterialTheme.shapes.small),
       verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-      items(Providers.entries) { provider ->
+      items(ProviderType.entries) { provider ->
         Text(
           text = provider.getFormattedName(),
           color = MaterialTheme.colorScheme.onPrimary,

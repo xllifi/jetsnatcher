@@ -23,7 +23,7 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import ru.xllifi.booru_api.Providers
+import ru.xllifi.booru_api.ProviderType
 import ru.xllifi.jetsnatcher.extensions.FullPreviewSysUi
 import ru.xllifi.jetsnatcher.extensions.toReal
 import ru.xllifi.jetsnatcher.proto.Provider
@@ -33,7 +33,7 @@ import ru.xllifi.jetsnatcher.ui.components.ConfirmDialog
 import ru.xllifi.jetsnatcher.ui.components.DoubleActionListEntry
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
-val defaultProvider = Providers.Gelbooru
+val defaultProvider = ProviderType.Gelbooru
 
 @Serializable
 class ProviderListNavKey : NavKey
