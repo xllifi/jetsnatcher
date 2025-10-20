@@ -81,6 +81,7 @@ import ru.xllifi.jetsnatcher.R
 import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.extensions.plus
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserViewModel
+import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 import ru.xllifi.jetsnatcher.ui.theme.sizes
@@ -91,14 +92,14 @@ fun SharedTransitionScope.PostGrid(
   modifier: Modifier = Modifier,
   viewModel: BrowserViewModel,
   innerPadding: PaddingValues = PaddingValues.Zero,
-  onLoadPostsRequest: () -> Unit,
-  onOpenSettings: () -> Unit,
+  onLoadPostsRequest: (evenIfNoMore: Boolean) -> Unit,
+  onEditProviderClick: () -> Unit,
 ) {
   val uiState = viewModel.uiState.collectAsState().value
   val gridState = rememberLazyStaggeredGridState()
   LaunchedEffect(gridState.canScrollForward) {
     if (!gridState.canScrollForward) {
-      onLoadPostsRequest()
+      onLoadPostsRequest(false)
     }
   }
   SmartScrollToItemEffect(
@@ -197,13 +198,13 @@ fun SharedTransitionScope.PostGrid(
             ) {
               if (uiState.loadPostsError is UnauthorizedException) {
                 Button(
-                  onClick = onOpenSettings
+                  onClick = onEditProviderClick
                 ) {
-                  Text("Open settings")
+                  Text("Edit provider") // TODO: translate
                 }
               }
               Button(
-                onClick = onLoadPostsRequest
+                onClick = { onLoadPostsRequest(true) }
               ) {
                 Text("Retry")
               }
@@ -231,7 +232,7 @@ fun PostGridPreview() {
         PostGrid(
           viewModel = browserViewModel,
           onLoadPostsRequest = {},
-          onOpenSettings = {},
+          onEditProviderClick = {},
         )
       }
     }
@@ -261,12 +262,6 @@ private fun SharedTransitionScope.Card(
     ) {
       Column(
         modifier = Modifier
-//          .onPlaced {
-//            // Please someone make a better solution this sucks
-//            if (showPostInfo) {
-//              browserViewModel.addIntSizeForPost(post.id, it.size)
-//            }
-//          }
           .conditional(
             isSelected,
             Modifier.sharedElement(

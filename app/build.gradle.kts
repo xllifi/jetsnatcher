@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.protobuf)
 }
 
 android {
@@ -77,13 +76,12 @@ dependencies {
     implementation(libs.androidx.nav3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.kotlinx.serialization.core)
+    implementation(libs.kotlinx.serialization.protobuf)
     implementation(libs.bundles.coil)
     implementation(libs.material3)
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.datastore)
-    implementation(libs.protobuf.java)
-    implementation(libs.protobuf.kotlin)
     implementation(libs.composehtml)
     implementation(libs.colormath)
     implementation(libs.colormath.compose)
@@ -95,20 +93,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-}
-
-protobuf {
-    protoc {
-        // 3. Specify the Protobuf Compiler version
-        artifact = "com.google.protobuf:protoc:3.21.7"
-    }
-    generateProtoTasks {
-        all().forEach { task ->
-            task.plugins {
-                create("java") {
-                    option("lite") // 4. Generate the "Lite" version for Android
-                }
-            }
-        }
-    }
 }

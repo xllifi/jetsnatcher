@@ -20,20 +20,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import ru.xllifi.booru_api.ProviderType
 import ru.xllifi.jetsnatcher.extensions.FullPreviewSysUi
-import ru.xllifi.jetsnatcher.extensions.toReal
-import ru.xllifi.jetsnatcher.proto.Provider
 import ru.xllifi.jetsnatcher.proto.SettingsSerializer
+import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
-import ru.xllifi.jetsnatcher.ui.components.ConfirmDialog
 import ru.xllifi.jetsnatcher.ui.components.DoubleActionListEntry
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
-val defaultProvider = ProviderType.Gelbooru
+val defaultProviderType = ProviderType.Gelbooru
 
 @Serializable
 class ProviderListNavKey : NavKey
@@ -41,14 +37,21 @@ class ProviderListNavKey : NavKey
 @Composable
 fun ProviderList(
   innerPadding: PaddingValues,
+  onEditProvider: (
+    provider: ProviderProto?,
+    index: Int?,
+    providerType: ProviderType,
+  ) -> Unit,
+  onDeleteProvider: (
+      provider: ProviderProto,
+      index: Int,
+  ) -> Unit,
 ) {
   val settingsDataStore = LocalContext.current.settingsDataStore
   val settingsState by settingsDataStore.data.collectAsState(SettingsSerializer.defaultValue)
 
-  var provider: Provider? by remember { mutableStateOf(null) }
+  var provider: ProviderProto? by remember { mutableStateOf(null) }
   var providerIndex: Int? by remember { mutableStateOf(null) }
-  var providerType by remember { mutableStateOf(defaultProvider) }
-  var showProviderInfoDialog by remember { mutableStateOf(false) }
   var showProviderDeleteDialog by remember { mutableStateOf(false) }
   LazyColumn(
     modifier = Modifier
@@ -60,105 +63,34 @@ fun ProviderList(
     item {
       Button(
         onClick = {
-          providerType = defaultProvider
-          provider = null
-          providerIndex = null
-          showProviderInfoDialog = true
+          onEditProvider(
+            null,
+            null,
+            defaultProviderType,
+          )
         }
       ) {
         Text("New provider")
       }
     }
-    itemsIndexed(settingsState.providerList) { index, providerFromList ->
+    itemsIndexed(settingsState.providers) { index, providerFromList ->
       DoubleActionListEntry(
         title = "Edit ${providerFromList.name}",
         description = providerFromList.routes.base,
         primaryActionIcon = Icons.Outlined.Edit,
         onPrimaryAction = {
-          providerType = providerFromList.providerType.toReal()
-          provider = providerFromList
-          providerIndex = index
-          showProviderInfoDialog = true
+          onEditProvider(
+            providerFromList,
+            index,
+            providerFromList.providerType,
+          )
         },
         secondaryActionIcon = Icons.Outlined.DeleteOutline,
         onSecondaryAction = {
-          provider = providerFromList
-          providerIndex = index
-          showProviderDeleteDialog = true
+          onDeleteProvider(providerFromList, index)
         },
       )
     }
-  }
-
-  if (showProviderDeleteDialog) {
-    ConfirmDialog(
-      title = "Delete ${provider?.name ?: "Unknown provider"}?",
-      description = "This action cannot be undone.",
-      onDismissRequest = { showProviderDeleteDialog = false },
-    ) {
-      Button(
-        enabled = providerIndex != null,
-        onClick = {
-          if (providerIndex == null) return@Button
-          GlobalScope.launch {
-            settingsDataStore.updateData { settings ->
-              settings.toBuilder()
-                .removeProvider(providerIndex!!)
-                .build()
-            }
-          }
-          showProviderDeleteDialog = false
-        }
-      ) {
-        Text("Yes, delete")
-      }
-      Button(
-        onClick = { showProviderDeleteDialog = false }
-      ) {
-        Text("No, cancel")
-      }
-    }
-  }
-
-  var showProviderTypeDialog by remember { mutableStateOf(false) }
-  if (showProviderInfoDialog) {
-    ProviderInfoDialog(
-      provider = provider,
-      onDone = { newProvider ->
-        provider = newProvider
-        GlobalScope.launch {
-          settingsDataStore.updateData { settings ->
-            val builder = settings.toBuilder()
-            if (providerIndex != null && providerIndex!! >= 0) {
-              builder.setProvider(providerIndex!!, provider)
-            } else {
-              builder.addProvider(provider)
-            }
-            builder.build()
-          }
-        }
-        showProviderInfoDialog = false
-      },
-      onDismissRequest = {
-        showProviderInfoDialog = false
-      },
-      providerType = providerType,
-      onSelectProviderType = {
-        showProviderTypeDialog = true
-      }
-    )
-  }
-
-  if (showProviderTypeDialog) {
-    ProviderTypeDialog(
-      onDismissRequest = {
-        showProviderTypeDialog = false
-      },
-      onSelectProvider = {
-        providerType = it
-        showProviderTypeDialog = false
-      }
-    )
   }
 }
 
@@ -166,6 +98,6 @@ fun ProviderList(
 @Composable
 fun ProviderListPreview() {
   JetSnatcherTheme {
-    ProviderList(PaddingValues(0.dp))
+    ProviderList(PaddingValues(0.dp), { _, _, _ -> }, { _, _ -> })
   }
 }

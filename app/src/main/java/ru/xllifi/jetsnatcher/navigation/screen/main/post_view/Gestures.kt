@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import ru.xllifi.jetsnatcher.extensions.isHorizontal
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
@@ -157,7 +159,7 @@ fun AllGestures(
   }
 
   val context = LocalContext.current
-  val settings = runBlocking { context.settingsDataStore.data.first() }
+  val doubleTapThreshold by context.settingsDataStore.data.map { it.doubleTapThreshold }.collectAsState(300u)
 
   Box(
     modifier = modifier
@@ -172,7 +174,7 @@ fun AllGestures(
             // Handle double tap gesture
             val doubleTapResult = handleDoubleTap(
               event = event,
-              doubleTapThreshold = settings.doubleTapThreshold,
+              doubleTapThreshold = doubleTapThreshold.toInt(),
               tapCount = tapCount,
               firstTapTime = firstTapTime,
               currentScale = scale,
@@ -191,7 +193,7 @@ fun AllGestures(
             }
 
             // Reset tap count if too much time has passed since the first tap
-            if (tapCount == 1 && System.currentTimeMillis() - firstTapTime >= 300) {
+            if (tapCount == 1 && System.currentTimeMillis() - firstTapTime >= doubleTapThreshold.toInt()) {
               tapCount = 0
             }
 

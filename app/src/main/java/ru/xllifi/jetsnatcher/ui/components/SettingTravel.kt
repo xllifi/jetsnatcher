@@ -9,15 +9,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,17 +25,17 @@ import androidx.compose.ui.unit.dp
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
+
 @Composable
-fun SettingSwitch(
+fun SettingTravel(
   title: String,
   description: String?,
-  checked: Boolean,
-  onCheckedChange: (newValue: Boolean) -> Unit,
+  onClick: () -> Unit,
 ) {
   Row (
     modifier = Modifier
       .clickable {
-        onCheckedChange(!checked)
+        onClick()
       }
       .clip(MaterialTheme.shapes.medium)
       .background(MaterialTheme.colorScheme.surfaceContainer)
@@ -63,23 +62,25 @@ fun SettingSwitch(
         )
       }
     }
-    Switch(
-      checked = checked,
-      onCheckedChange = onCheckedChange
+    Icon(
+      imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+      contentDescription = null,
+      tint = MaterialTheme.colorScheme.onSurface,
+      modifier = Modifier
+        .align(Alignment.Top)
+        .size(18.dp)
     )
   }
 }
 
 @Composable
 @FullPreview
-fun SettingSwitchPreview() {
-  var checked by remember { mutableStateOf(true) }
+fun SettingTravelPreview() {
   JetSnatcherTheme {
-    SettingSwitch(
+    SettingTravel(
       title = "Preview setting. Long title to go on a second line PLEASE!",
       description = "Preview setting description. This text is supposed to describe what the option should do. Some more text to make it go on a third line.",
-      checked,
-      onCheckedChange = { checked = it }
+      onClick = {}
     )
   }
 }

@@ -22,9 +22,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -48,7 +51,6 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -63,7 +65,7 @@ import kotlin.coroutines.cancellation.CancellationException
 @Composable
 fun SharedTransitionScope.PostView(
   modifier: Modifier = Modifier,
-  browserViewModel: BrowserViewModel,
+  viewModel: BrowserViewModel,
   animatedVisibilityScope: AnimatedVisibilityScope,
   onBack: () -> Unit,
   /** Swipe right/left */
@@ -72,7 +74,7 @@ fun SharedTransitionScope.PostView(
   postToolbarActions: PostToolbarActions = PostToolbarActions(),
 ) {
   val windowSize = LocalWindowInfo.current.containerSize
-  val uiState by browserViewModel.uiState.collectAsState()
+  val uiState by viewModel.uiState.collectAsState()
 
   // region predictive back
   var predictiveBackProgress by remember { mutableFloatStateOf(1f) }
@@ -135,8 +137,6 @@ fun SharedTransitionScope.PostView(
       state = pagerState,
       userScrollEnabled = pagerScrollEnabled,
     ) { index ->
-      val post by remember { derivedStateOf { uiState.posts[index] } }
-      val isSelected by remember { derivedStateOf { uiState.selectedPostIndex == index } }
       AllGestures(
         modifier = Modifier.align(Alignment.Center),
         predictiveBackProgress = predictiveBackProgress,
@@ -148,7 +148,7 @@ fun SharedTransitionScope.PostView(
           modifier = Modifier.fillMaxSize(),
           contentAlignment = Alignment.Center,
         ) {
-          var notesEnabled by remember { mutableStateOf(false) }
+          var showNotes by remember { mutableStateOf(false) }
           // Image
           PostImage(
             modifier = scaleModifier
@@ -164,13 +164,14 @@ fun SharedTransitionScope.PostView(
                 translationY = offsetValue.y * scaleValue,
                 transformOrigin = TransformOrigin(0f, 0f)
               ),
-            postId = post.id,
-            isSelected = isSelected,
+            viewModel = viewModel,
+            postIndex = index,
+            isSelected = uiState.selectedPostIndex == index,
             animatedVisibilityScope = animatedVisibilityScope,
             cornerSize = cornerSize,
             innerPadding = innerPadding,
             alpha = alpha,
-            notesEnabled = notesEnabled,
+            showNotes = showNotes,
           )
           // Info overlay
           PostOverlay(
@@ -178,13 +179,14 @@ fun SharedTransitionScope.PostView(
               .fillMaxSize()
               .renderInSharedTransitionScopeOverlay(zIndexInOverlay = 2f)
               .alpha(alpha),
-            postId = post.id,
             show = scaleValue <= 1f,
+            viewModel = viewModel,
+            postIndex = index,
             innerPadding = innerPadding,
             postToolbarActions = postToolbarActions.copy(
-              onNotesButtonPress = { notesEnabled = !notesEnabled }
+              onNotesButtonPress = { showNotes = !showNotes }
             ),
-            notesEnabled = notesEnabled,
+            showNotes = showNotes,
           )
         }
       }
@@ -196,22 +198,21 @@ fun SharedTransitionScope.PostView(
 @Composable
 private fun SharedTransitionScope.PostImage(
   modifier: Modifier = Modifier,
-  postId: Int,
+  viewModel: BrowserViewModel,
+  postIndex: Int,
   isSelected: Boolean,
   animatedVisibilityScope: AnimatedVisibilityScope,
   cornerSize: Dp,
   innerPadding: PaddingValues,
   alpha: Float,
-  notesEnabled: Boolean,
+  showNotes: Boolean,
 ) {
-  val browserViewModel: BrowserViewModel = viewModel()
-  val uiState by browserViewModel.uiState.collectAsState()
-  val posts by remember { derivedStateOf { uiState.posts } }
-  val post by remember { derivedStateOf { posts.first { it.id == postId } } }
+  val uiState by viewModel.uiState.collectAsState()
+  val post by remember { derivedStateOf { uiState.posts[postIndex] } }
 
   if ((post.hasNotes && post.notes == null) || post.tags == null) {
     LaunchedEffect(Unit) {
-      browserViewModel.loadTagsAndNotes(postId)
+      viewModel.loadPostMeta(postIndex)
     }
   }
 
@@ -268,7 +269,12 @@ private fun SharedTransitionScope.PostImage(
       )
 
       // region notes
-      if (post.hasNotes && notesEnabled && post.notes != null) {
+      if (post.hasNotes && showNotes && post.notes != null) {
+        LaunchedEffect(alpha) {
+          if (alpha < 1f) {
+            shownNote = -1
+          }
+        }
         RenderNotes(
           post = post,
           imageSize = imageSize,

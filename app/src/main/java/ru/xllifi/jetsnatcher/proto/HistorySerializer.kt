@@ -10,15 +10,15 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
-import ru.xllifi.jetsnatcher.proto.settings.SettingsProto
+import ru.xllifi.jetsnatcher.proto.history.HistoryProto
 import java.io.InputStream
 import java.io.OutputStream
 
 @OptIn(ExperimentalSerializationApi::class)
-object SettingsSerializer : Serializer<SettingsProto> {
-  override val defaultValue: SettingsProto = SettingsProto()
+object HistorySerializer : Serializer<HistoryProto> {
+  override val defaultValue: HistoryProto = HistoryProto()
 
-  override suspend fun readFrom(input: InputStream): SettingsProto {
+  override suspend fun readFrom(input: InputStream): HistoryProto {
     try {
       return ProtoBuf.decodeFromByteArray(input.readBytes())
     } catch (ex: Exception) {
@@ -31,11 +31,11 @@ object SettingsSerializer : Serializer<SettingsProto> {
     }
   }
 
-  override suspend fun writeTo(t: SettingsProto, output: OutputStream) =
+  override suspend fun writeTo(t: HistoryProto, output: OutputStream) =
     output.write(ProtoBuf.encodeToByteArray(t))
 }
 
-val Context.settingsDataStore: DataStore<SettingsProto> by dataStore(
-  fileName = "settings.pb",
-  serializer = SettingsSerializer
+val Context.historyDataStore: DataStore<HistoryProto> by dataStore(
+  fileName = "history.pb",
+  serializer = HistorySerializer
 )

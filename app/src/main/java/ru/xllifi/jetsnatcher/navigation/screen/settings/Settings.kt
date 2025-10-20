@@ -3,29 +3,24 @@
 package ru.xllifi.jetsnatcher.navigation.screen.settings
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -33,6 +28,8 @@ import ru.xllifi.jetsnatcher.proto.SettingsSerializer
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.components.SettingSlider
 import ru.xllifi.jetsnatcher.ui.components.SettingSwitch
+import ru.xllifi.jetsnatcher.ui.components.SettingTravel
+import ru.xllifi.jetsnatcher.ui.components.TextFieldDialogNavKey
 
 @Serializable
 object SettingsNavKey : NavKey
@@ -41,7 +38,8 @@ object SettingsNavKey : NavKey
 @Composable
 fun Settings(
   innerPadding: PaddingValues,
-  onEditProviders: () -> Unit,
+  onManageProviders: () -> Unit,
+  topBackStack: NavBackStack<NavKey>,
 ) {
   val settingsDataStore = LocalContext.current.settingsDataStore
   val settingsState by settingsDataStore.data.collectAsState(SettingsSerializer.defaultValue)
@@ -63,61 +61,59 @@ fun Settings(
     )
     val scope = rememberCoroutineScope()
     SettingSlider(
-      "Page size",
-      "How many posts to request each time a request is sent.",
+      "Page size", // TODO: translate
+      "How many posts to request each time a request is sent", // TODO: translate
       value = settingsState.pageSize.toFloat(),
       onValueChange = { value ->
         scope.launch {
-          settingsDataStore.updateData { currentSettings ->
-            currentSettings
-              .toBuilder()
-              .setPageSize(value.toInt())
-              .build()
+          settingsDataStore.updateData {
+            it.copy(
+              pageSize = value.toUInt()
+            )
           }
         }
       },
       valueRange = 10f..100f,
       steps = 8,
       showDecimal = false,
+      topBackStack = topBackStack,
     )
     SettingSlider(
-      "Double tap threshold",
-      "How fast you should double-tap the screen for it to register as double tap",
+      "Double tap threshold", // TODO: translate
+      "How fast you should double-tap the screen for it to register as double tap", // TODO: translate
       value = settingsState.doubleTapThreshold.toFloat(),
       onValueChange = { value ->
         scope.launch {
-          settingsDataStore.updateData { currentSettings ->
-            currentSettings
-              .toBuilder()
-              .setDoubleTapThreshold(value.toInt())
-              .build()
+          settingsDataStore.updateData {
+            it.copy(
+              doubleTapThreshold = value.toUInt()
+            )
           }
         }
       },
       valueRange = 100f..500f,
       steps = 7,
       showDecimal = false,
+      topBackStack = topBackStack,
     )
     SettingSwitch(
-      label = "Show post info in grid view",
-      description = "Whether to show some general post info below each card in post view",
+      title = "Show post info in grid view", // TODO: translate
+      description = "Whether to show some general post info below each card in post view", // TODO: translate
       checked = settingsState.showCardInfo,
       onCheckedChange = { value ->
         scope.launch {
-          settingsDataStore.updateData { currentSettings ->
-            currentSettings
-              .toBuilder()
-              .setShowCardInfo(value)
-              .build()
+          settingsDataStore.updateData {
+            it.copy(
+              showCardInfo = value
+            )
           }
         }
       }
     )
-    Button(
-      onClick = onEditProviders
-    ) {
-      Text("Edit providers")
-    }
-    // tODO: setting button
+    SettingTravel(
+      title = "Manage providers", // TODO: translate
+      description = "Open the provider list to edit and delete providers", // TODO: translate
+      onClick = onManageProviders
+    )
   }
 }

@@ -32,17 +32,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
+import androidx.navigation3.runtime.NavKey
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import ru.xllifi.booru_api.ProviderType
+import ru.xllifi.booru_api.Routes
 import ru.xllifi.jetsnatcher.extensions.FullPreview
-import ru.xllifi.jetsnatcher.extensions.toProto
-import ru.xllifi.jetsnatcher.proto.Provider
+import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
+import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
+import kotlin.text.ifEmpty
 
 @Composable
 private fun TextField(
@@ -100,35 +107,26 @@ private fun TextField(
   )
 }
 
-@Composable
-fun ProviderInfoDialog(
-  provider: Provider? = null,
-  onDone: (newProvider: Provider) -> Unit,
-  onDismissRequest: () -> Unit,
-  providerType: ProviderType,
-  /** This should show [ProviderTypeDialog] */
-  onSelectProviderType: () -> Unit,
-) {
-  Dialog(
-    onDismissRequest = onDismissRequest,
-  ) {
-    ProviderInfoDialogContent(
-      provider = provider,
-      onDone = onDone,
-      providerType = providerType,
-      onSelectProviderType = onSelectProviderType,
-    )
-  }
-}
+@Serializable
+data class ProviderEditDialogNavKey(
+  val provider: ProviderProto? = null,
+  val index: Int? = null,
+  val providerType: ProviderType,
+) : NavKey
 
 @Composable
-fun ProviderInfoDialogContent(
-  provider: Provider? = null,
-  onDone: (newProvider: Provider) -> Unit,
+fun ProviderEditDialog(
+  provider: ProviderProto? = null,
+  index: Int? = null,
   providerType: ProviderType,
   onSelectProviderType: () -> Unit,
+  onDone: (providerProto: ProviderProto, index: Int?) -> Unit,
 ) {
-  var temporaryProvider by remember { mutableStateOf(provider?.toTemporary() ?: TemporaryProvider()) }
+  var temporaryProvider by remember {
+    mutableStateOf(
+      provider?.toTemporary() ?: TemporaryProvider()
+    )
+  }
   LaunchedEffect(provider) {
     temporaryProvider = provider?.toTemporary() ?: TemporaryProvider()
   }
@@ -207,6 +205,13 @@ fun ProviderInfoDialogContent(
       onDone = { temporaryProvider = temporaryProvider.copy(routesComments = it) },
     )
     TextField(
+      value = temporaryProvider.routesNotes,
+      onValueChange = { temporaryProvider = temporaryProvider.copy(routesNotes = it) },
+      name = "Notes route",
+      placeholder = providerDefaultRoutes.notes,
+      onDone = { temporaryProvider = temporaryProvider.copy(routesNotes = it) },
+    )
+    TextField(
       value = temporaryProvider.routesAuth,
       onValueChange = { temporaryProvider = temporaryProvider.copy(routesAuth = it) },
       name = "API key",
@@ -215,21 +220,8 @@ fun ProviderInfoDialogContent(
     )
     Button(
       onClick = {
-        val type: Provider.ProviderType = providerType.toProto()
-        val newProvider = Provider.newBuilder()
-          .setName(temporaryProvider.name.ifEmpty { providerType.name })
-          .setProviderType(type)
-          .setRoutes(
-            Provider.Routes.newBuilder()
-              .setBase(temporaryProvider.routesBase.ifEmpty { providerDefaultRoutes.base })
-              .setAutocomplete(temporaryProvider.routesAutocomplete.ifEmpty { providerDefaultRoutes.autocomplete })
-              .setPosts(temporaryProvider.routesPosts.ifEmpty { providerDefaultRoutes.posts })
-              .setTags(temporaryProvider.routesTags.ifEmpty { providerDefaultRoutes.tags })
-              .setComments(temporaryProvider.routesComments.ifEmpty { providerDefaultRoutes.comments })
-              .setAuthSuffix(temporaryProvider.routesAuth.ifEmpty { providerDefaultRoutes.authSuffix ?: "" })
-          )
-          .build()
-        onDone(newProvider)
+        val provider = temporaryProvider.toProto(providerType, providerDefaultRoutes)
+        onDone(provider, index)
       }
     ) {
       Text("Done")
@@ -240,70 +232,69 @@ fun ProviderInfoDialogContent(
 data class TemporaryProvider(
   val name: String = "",
   val routesBase: String = "",
+  val routesPublicFacingPostPage: String = "",
   val routesAutocomplete: String = "",
   val routesPosts: String = "",
   val routesTags: String = "",
   val routesComments: String = "",
+  val routesNotes: String = "",
   val routesAuth: String = "",
 ) {
-  fun toProto(providerType: Provider.ProviderType): Provider {
-    return Provider.newBuilder()
-      .setName(name)
-      .setProviderType(providerType)
-      .setRoutes(Provider.Routes.newBuilder()
-        .setBase(routesBase)
-        .setAutocomplete(routesAutocomplete)
-        .setPosts(routesPosts)
-        .setTags(routesTags)
-        .setComments(routesComments)
-        .setAuthSuffix(routesAuth)
+  fun toProto(providerType: ProviderType, defaultRoutes: Routes): ProviderProto {
+    return ProviderProto(
+      name = this.name.ifEmpty { providerType.name },
+      providerType = providerType,
+      routes = Routes(
+        base = this.routesBase.ifEmpty { defaultRoutes.base },
+        publicFacingPostPage = this.routesPublicFacingPostPage.ifEmpty { defaultRoutes.publicFacingPostPage },
+        autocomplete = this.routesAutocomplete.ifEmpty { defaultRoutes.autocomplete },
+        posts = this.routesPosts.ifEmpty { defaultRoutes.posts },
+        tags = this.routesTags.ifEmpty { defaultRoutes.tags },
+        comments = this.routesComments.ifEmpty { defaultRoutes.comments },
+        notes = this.routesNotes.ifEmpty { defaultRoutes.notes },
+        authSuffix = this.routesAuth.ifEmpty { defaultRoutes.authSuffix },
       )
-      .build()
+    )
   }
 }
-fun Provider.toTemporary(): TemporaryProvider {
+fun ProviderProto.toTemporary(): TemporaryProvider {
   return TemporaryProvider(
     name = this.name,
     routesBase = this.routes.base,
+    routesPublicFacingPostPage = this.routes.publicFacingPostPage,
     routesAutocomplete = this.routes.autocomplete,
     routesPosts = this.routes.posts,
     routesTags = this.routes.tags,
     routesComments = this.routes.comments,
-    routesAuth = this.routes.authSuffix,
+    routesNotes = this.routes.notes,
+    routesAuth = this.routes.authSuffix ?: "",
   )
 }
 
 @Composable
 @FullPreview
-fun ProviderInfoDialogContentPreview() {
+private fun ProviderEditDialogContentPreview() {
   JetSnatcherTheme {
     var providerType by remember { mutableStateOf(ProviderType.Gelbooru) }
-    ProviderInfoDialogContent(
-      onDone = {},
+    ProviderEditDialog(
       providerType = providerType,
       onSelectProviderType = { /* Show [ProviderTypeDialog] */ },
+      onDone = { _, _ -> },
     )
   }
 }
 
-@Composable
-fun ProviderTypeDialog(
-  onDismissRequest: () -> Unit,
-  onSelectProvider: (provider: ProviderType) -> Unit,
-) {
-  Dialog(
-    onDismissRequest = onDismissRequest,
-  ) {
-    ProviderTypeDialogContent(
-      onSelectProvider = onSelectProvider,
-    )
-  }
-}
+
+@Serializable
+data class ProviderTypeDialogNavKey(
+  val onSelectType: (providerType: ProviderType) -> Unit,
+) : NavKey
+
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun ProviderTypeDialogContent(
-  onSelectProvider: (provider: ProviderType) -> Unit,
+fun ProviderTypeDialog(
+  onSelectType: (providerType: ProviderType) -> Unit,
 ) {
   Column(
     modifier = Modifier
@@ -328,16 +319,16 @@ private fun ProviderTypeDialogContent(
         .clip(MaterialTheme.shapes.small),
       verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-      items(ProviderType.entries) { provider ->
+      items(ProviderType.entries) { providerType ->
         Text(
-          text = provider.getFormattedName(),
+          text = providerType.getFormattedName(),
           color = MaterialTheme.colorScheme.onPrimary,
           style = MaterialTheme.typography.labelLargeEmphasized,
           modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.primary)
-            .clickable { onSelectProvider(provider) }
+            .clickable { onSelectType(providerType) }
             .padding(horizontal = 12.dp, vertical = 6.dp),
         )
       }
@@ -347,10 +338,10 @@ private fun ProviderTypeDialogContent(
 
 @Composable
 @FullPreview
-fun ProviderTypeDialogPreview() {
+private fun ProviderTypeDialogPreview() {
   JetSnatcherTheme {
-    ProviderTypeDialogContent(
-      onSelectProvider = {}
+    ProviderTypeDialog(
+      onSelectType = {}
     )
   }
 }

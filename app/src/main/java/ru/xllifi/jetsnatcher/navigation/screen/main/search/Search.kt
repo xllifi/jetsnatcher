@@ -1,6 +1,8 @@
 package ru.xllifi.jetsnatcher.navigation.screen.main.search
 
+import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideIn
@@ -24,30 +26,38 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ManageSearch
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Bookmarks
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonMenu
+import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
@@ -56,33 +66,45 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import ru.xllifi.booru_api.Tag
 import ru.xllifi.booru_api.TagCategory
 import ru.xllifi.jetsnatcher.extensions.FullPreview
+import ru.xllifi.jetsnatcher.extensions.isImeHalfVisible
 import ru.xllifi.jetsnatcher.extensions.toReal
-import ru.xllifi.jetsnatcher.proto.settingsDataStore
+import ru.xllifi.jetsnatcher.proto.historyDataStore
+import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.ui.components.Tag
+import ru.xllifi.jetsnatcher.ui.components.TextField
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
+
+fun timestampToRelativeTimeSpan(timestamp: Long): String {
+  return DateUtils.getRelativeTimeSpanString(
+    timestamp,
+    System.currentTimeMillis(),
+    DateUtils.MINUTE_IN_MILLIS,
+    DateUtils.FORMAT_ABBREV_RELATIVE
+  ).toString()
+}
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun Search(
-  providerIndex: Int,
+  providerProto: ProviderProto,
   searchTags: List<Tag>,
   innerPadding: PaddingValues,
-  onNewSearch: (providerIndex: Int, searchTags: List<Tag>) -> Unit,
+  onNewSearch: (providerProto: ProviderProto, searchTags: List<Tag>) -> Unit,
 ) {
-  val mutableTags = remember { searchTags.toMutableStateList() }
+  var mutableTags = remember { searchTags.toMutableStateList() }
   var autocompleteTags by remember { mutableStateOf(emptyList<Tag>()) }
 
   Box(
@@ -92,7 +114,12 @@ fun Search(
   ) {
     var value by remember { mutableStateOf("") }
     val layoutDirection = LocalLayoutDirection.current
-    val isImeVisible = WindowInsets.isImeVisible
+    val isImeHalfVisible = WindowInsets.isImeHalfVisible
+
+    val context = LocalContext.current
+    val history by context.historyDataStore.data.collectAsState(runBlocking { context.historyDataStore.data.first() })
+    var showSavedInsteadOfRecent by remember { mutableStateOf(false) }
+
     Column(
       modifier = Modifier
         .padding(
@@ -100,7 +127,7 @@ fun Search(
             start = innerPadding.calculateStartPadding(layoutDirection),
             end = innerPadding.calculateEndPadding(layoutDirection),
             top = innerPadding.calculateTopPadding(),
-            bottom = if (isImeVisible) {
+            bottom = if (isImeHalfVisible) {
               0.dp
             } else {
               innerPadding.calculateBottomPadding()
@@ -109,10 +136,13 @@ fun Search(
         )
         .padding(horizontal = 16.dp),
     ) {
+      val focusRequester = remember { FocusRequester() }
       TextField(
+        modifier = Modifier
+          .focusRequester(focusRequester),
         value = value,
         onValueChange = { value = it },
-        onDone = {
+        onKeyboardDone = {
           val acTag = autocompleteTags.firstOrNull { it.value == value || it.label == value }
           if (acTag != null) {
             mutableTags.add(acTag)
@@ -127,48 +157,115 @@ fun Search(
             )
           }
           value = ""
-        }
+        },
+        icon = Icons.Outlined.Search,
       )
-
-      AnimatedVisibility(
-        visible = value.isEmpty(),
-        enter = fadeIn(),
-        exit = fadeOut(),
-      ) {
-        SearchTagsFlowRow(
-          modifier = Modifier
-            .padding(top = 12.dp),
-          tags = mutableTags,
-          onInverseTag = { index, newVal -> mutableTags[index] = newVal },
-          onRemoveTag = { mutableTags.remove(it) }
-        )
+      LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
       }
-      AnimatedVisibility(
-        visible = value.isNotEmpty(),
-        enter = fadeIn(),
-        exit = fadeOut(),
+
+      Box(
+        modifier = Modifier
+          .padding(top = 12.dp),
       ) {
-        // TODO: uncomment and fix
-        AutocompleteTags(
-          providerIndex = providerIndex,
-          modifier = Modifier.padding(vertical = 12.dp),
-          tagPart = value,
-          autocompleteTags = autocompleteTags,
-          onNewAutocompleteTags = { autocompleteTags = it },
-          onTagClick = { tag ->
-            value = ""
-            autocompleteTags = emptyList()
-            mutableTags.add(tag)
-          }
+        this@Column.AnimatedVisibility(
+          visible = value.isEmpty(),
+          enter = fadeIn(),
+          exit = fadeOut(),
         )
+        {
+          if (mutableTags.isNotEmpty()) {
+            SearchTagsFlowRow(
+              modifier = Modifier
+                .padding(top = 12.dp),
+              tags = mutableTags,
+              onInverseTag = { index, newVal -> mutableTags[index] = newVal },
+              onRemoveTag = { mutableTags.remove(it) }
+            )
+          } else {
+            LazyColumn(
+              modifier = Modifier
+                .clip(MaterialTheme.shapes.medium),
+              verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+              items(history.entries.reversed()) { historyEntry ->
+                Box(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .clickable {
+                      mutableTags.removeAll { true }
+                      mutableTags.addAll(historyEntry.tags)
+                    }
+                    .padding(12.dp)
+                    .padding(top = 12.dp),
+  //                horizontalArrangement = Arrangement.spacedBy(4.dp),
+  //                verticalAlignment = Alignment.CenterVertically,
+                ) {
+                  LazyRow(
+                    modifier = Modifier
+                      .clip(MaterialTheme.shapes.extraSmall),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                  ) {
+                    items(historyEntry.tags) { tag ->
+                      Tag(
+                        tag = tag,
+                        baseBgColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        baseFgColor = MaterialTheme.colorScheme.primary,
+                      ) { _, _, fgColor, bgColor ->
+                        Text(
+                          text = tag.label,
+                          style = MaterialTheme.typography.bodyLarge,
+                          color = fgColor,
+                          modifier = Modifier
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .background(bgColor)
+                            .padding(8.dp, 6.dp),
+                        )
+                      }
+                    }
+                  }
+                  Text(
+                    text = timestampToRelativeTimeSpan(historyEntry.createdAt),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                      color = MaterialTheme.colorScheme.onSurface.copy(0.4f)
+                    ),
+                    modifier = Modifier
+                      .align(Alignment.TopStart)
+                      .offset(y = -20.dp)
+                  )
+                }
+              }
+            }
+          }
+        }
+        this@Column.AnimatedVisibility(
+          visible = value.isNotEmpty(),
+          enter = fadeIn(),
+          exit = fadeOut(),
+        ) {
+          AutocompleteTags(
+            providerProto = providerProto,
+            modifier = Modifier.padding(bottom = 12.dp),
+            tagPart = value,
+            autocompleteTags = autocompleteTags,
+            onNewAutocompleteTags = { autocompleteTags = it },
+            onTagClick = { tag ->
+              value = ""
+              autocompleteTags = emptyList()
+              mutableTags.add(tag)
+            }
+          )
+        }
       }
     }
 
     val keyboardController = LocalSoftwareKeyboardController.current
     AnimatedVisibility(
-      visible = value.isEmpty(),
+      visible = value.isEmpty() && mutableTags.isNotEmpty(),
       enter = slideIn { IntOffset(x = it.width, y = 0) } + fadeIn(),
-      exit = slideOut { IntOffset(x = it.width, y = 0) } + fadeOut(),
+      exit = slideOut { IntOffset(x = 0, y = it.height) } + fadeOut(),
     ) {
       Box(
         modifier = Modifier
@@ -176,89 +273,44 @@ fun Search(
       ) {
         SearchFab {
           keyboardController?.hide()
-          onNewSearch(providerIndex, mutableTags)
+          onNewSearch(providerProto, mutableTags)
         }
+      }
+    }
+    AnimatedVisibility(
+      visible = value.isEmpty() && mutableTags.isEmpty(),
+      enter = slideIn { IntOffset(x = it.width, y = 0) } + fadeIn(),
+      exit = slideOut { IntOffset(x = 0, y = it.height) } + fadeOut(),
+    ) {
+      Box(
+        modifier = Modifier
+          .fillMaxSize()
+      ) {
+        HistoryFabMenu(
+          onSavedSearchesClick = {},
+          onRecentSearchesClick = {},
+        )
       }
     }
   }
 }
 
-// TODO: uncomment and fix
-//@FullPreview
-//@Composable
-//fun SearchPreview() {
-//  JetSnatcherTheme {
-//    Box(
-//      modifier = Modifier
-//        .fillMaxSize()
-//        .background(MaterialTheme.colorScheme.background)
-//    ) {
-//      Search(
-//        searchData = SearchData(providerIndex = 0),
-//        innerPadding = PaddingValues(0.dp),
-//        onNewSearch = {}
-//      )
-//    }
-//  }
-//}
-
+@FullPreview
 @Composable
-private fun TextField(
-  modifier: Modifier = Modifier,
-  value: String,
-  onValueChange: (newVal: String) -> Unit,
-  onDone: (value: String) -> Unit,
-) {
-  val focusRequester = remember { FocusRequester() }
-  BasicTextField(
-    modifier = modifier
-      .fillMaxWidth()
-      .clip(MaterialTheme.shapes.small)
-      .background(MaterialTheme.colorScheme.surfaceContainer)
-      .focusRequester(focusRequester),
-    value = value,
-    onValueChange = { onValueChange(it) },
-    singleLine = true,
-    keyboardOptions = KeyboardOptions(
-      imeAction = ImeAction.Done,
-    ),
-    keyboardActions = KeyboardActions { onDone(value) },
-    textStyle = MaterialTheme.typography.bodyLarge.copy(
-      color = MaterialTheme.colorScheme.onSurface,
-      fontSize = 16.sp,
-      lineHeight = 16.sp,
-    ),
-    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-    decorationBox = { innerTextField ->
-      Row(
-        modifier = Modifier
-          .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-      ) {
-        Icon(
-          imageVector = Icons.Outlined.Search,
-          contentDescription = null,
-          tint = MaterialTheme.colorScheme.onSurface,
-        )
-        Box {
-          if (value.isEmpty()) {
-            Text(
-              text = "Search tags...", // TODO: translate
-              style = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onSurface.copy(0.4f),
-                fontSize = 16.sp,
-                lineHeight = 16.sp,
-              )
-            )
-          }
-          innerTextField()
-        }
-      }
+fun SearchPreview() {
+  JetSnatcherTheme {
+    Box(
+      modifier = Modifier
+        .fillMaxSize()
+        .background(MaterialTheme.colorScheme.background)
+    ) {
+      Search(
+        innerPadding = PaddingValues(0.dp),
+        providerProto = ProviderProto(),
+        searchTags = listOf(),
+        onNewSearch = { _, _ -> },
+      )
     }
-  )
-  LaunchedEffect(Unit) {
-    focusRequester.requestFocus()
   }
 }
 
@@ -340,16 +392,14 @@ fun SearchTagsFlowRow(
 @Composable
 fun AutocompleteTags(
   modifier: Modifier = Modifier,
-  providerIndex: Int,
+  providerProto: ProviderProto,
   tagPart: String,
   autocompleteTags: List<Tag>,
   onNewAutocompleteTags: (newAc: List<Tag>) -> Unit,
   onTagClick: (tag: Tag) -> Unit,
 ) {
-  val context = LocalContext.current
+  val provider by remember { derivedStateOf { providerProto.toReal() } }
   LaunchedEffect(tagPart) {
-    val settings = context.settingsDataStore.data.first()
-    val provider = settings.getProvider(providerIndex).toReal()
     onNewAutocompleteTags(provider.getAutoComplete(tagPart.replace(" ", "_")) ?: emptyList())
   }
   LazyColumn(
@@ -361,11 +411,6 @@ fun AutocompleteTags(
       key = { index, tag -> tag.value }
     ) { index, tag ->
       AutocompleteTag(
-        index = index,
-        firstIndex = 0,
-        lastIndex = autocompleteTags.lastIndex,
-        roundedCornerSize = MaterialTheme.shapes.medium.topStart,
-        sharpCornerSize = CornerSize(4.dp),
         tag = tag,
         onTagClick = onTagClick
       )
@@ -375,11 +420,6 @@ fun AutocompleteTags(
 
 @Composable
 fun LazyItemScope.AutocompleteTag(
-  index: Int,
-  firstIndex: Int,
-  lastIndex: Int,
-  roundedCornerSize: CornerSize,
-  sharpCornerSize: CornerSize,
   tag: Tag,
   onTagClick: (tag: Tag) -> Unit,
 ) {
@@ -391,14 +431,7 @@ fun LazyItemScope.AutocompleteTag(
     Row(
       modifier = Modifier
         .animateItem()
-        .clip(
-          RoundedCornerShape(
-            topStart = if (index == firstIndex) roundedCornerSize else sharpCornerSize,
-            topEnd = if (index == firstIndex) roundedCornerSize else sharpCornerSize,
-            bottomEnd = if (index == lastIndex) roundedCornerSize else sharpCornerSize,
-            bottomStart = if (index == lastIndex) roundedCornerSize else sharpCornerSize,
-          )
-        )
+        .clip(MaterialTheme.shapes.extraSmall)
         .fillMaxWidth()
         .background(bgColor)
         .padding(16.dp)
@@ -473,7 +506,7 @@ fun AutocompleteTagsPreview() {
       ),
       onNewAutocompleteTags = {},
       onTagClick = {},
-      providerIndex = 0,
+      providerProto = ProviderProto(),
     )
   }
 }
@@ -483,11 +516,13 @@ fun AutocompleteTagsPreview() {
 fun BoxScope.SearchFab(
   onClick: () -> Unit,
 ) {
+  val bottomPadding by animateDpAsState(if (WindowInsets.isImeHalfVisible) 0.dp else 64.dp)
   FloatingActionButton(
     onClick = onClick,
     modifier = Modifier
       .align(Alignment.BottomEnd)
-      .padding(32.dp)
+      .padding(bottom = bottomPadding)
+      .padding(16.dp),
   ) {
     Row(
       verticalAlignment = Alignment.CenterVertically,
@@ -495,7 +530,7 @@ fun BoxScope.SearchFab(
       modifier = Modifier.padding(horizontal = 20.dp),
     ) {
       Text(
-        text = "Submit",
+        text = "Search", // TODO: Translate
         style = MaterialTheme.typography.bodyLargeEmphasized.copy(
           fontWeight = FontWeight.Medium
         )
@@ -505,5 +540,59 @@ fun BoxScope.SearchFab(
         contentDescription = null
       )
     }
+  }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
+@Composable
+fun BoxScope.HistoryFabMenu(
+  onSavedSearchesClick: () -> Unit,
+  onRecentSearchesClick: () -> Unit,
+) {
+  var fabMenuExpanded by rememberSaveable { mutableStateOf(false) }
+  val bottomPadding by animateDpAsState(if (WindowInsets.isImeHalfVisible) 0.dp else 64.dp)
+  FloatingActionButtonMenu(
+    modifier = Modifier
+      .align(Alignment.BottomEnd)
+      .padding(bottom = bottomPadding),
+    expanded = fabMenuExpanded,
+    button = {
+      ToggleFloatingActionButton(
+        checked = fabMenuExpanded,
+        onCheckedChange = {
+          fabMenuExpanded = !fabMenuExpanded
+        }
+      ) {
+        val imageVector by remember {
+          derivedStateOf {
+            if (checkedProgress > 0.5f) Icons.Filled.Close else Icons.AutoMirrored.Filled.ManageSearch
+          }
+        }
+        Icon(
+          painter = rememberVectorPainter(imageVector),
+          contentDescription = null,
+          modifier = Modifier.animateIcon({ checkedProgress }),
+        )
+      }
+    },
+  ) {
+    FloatingActionButtonMenuItem(
+      onClick = onSavedSearchesClick,
+      text = {
+        Text("Saved Searches") // TODO: Translate
+      },
+      icon = {
+        Icon(Icons.Outlined.Bookmarks, null)
+      },
+    )
+    FloatingActionButtonMenuItem(
+      onClick = onRecentSearchesClick,
+      text = {
+        Text("Recent Searches") // TODO: Translate
+      },
+      icon = {
+        Icon(Icons.Outlined.History, null)
+      },
+    )
   }
 }

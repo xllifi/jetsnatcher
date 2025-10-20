@@ -18,6 +18,8 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
@@ -46,7 +48,6 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.xllifi.booru_api.Post
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.extensions.conditional
@@ -60,16 +61,15 @@ import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 @Composable
 fun PostOverlay(
   modifier: Modifier = Modifier,
-  postId: Int,
   show: Boolean,
+  viewModel: BrowserViewModel,
+  postIndex: Int,
   innerPadding: PaddingValues,
   postToolbarActions: PostToolbarActions = PostToolbarActions(),
-  notesEnabled: Boolean,
+  showNotes: Boolean,
 ) {
-  val browserViewModel: BrowserViewModel = viewModel()
-  val uiState by browserViewModel.uiState.collectAsState()
-  val posts by remember { derivedStateOf { uiState.posts } }
-  val post by remember { derivedStateOf { posts.first { it.id == postId } } }
+  val uiState by viewModel.uiState.collectAsState()
+  val post by remember { derivedStateOf { uiState.posts[postIndex] } }
   val tags: List<Any> by remember { derivedStateOf { post.tags ?: post.unparsedTags } }
 
   Box(modifier = modifier) {
@@ -92,12 +92,37 @@ fun PostOverlay(
     ) {
       PostToolbar(
         post = post,
+        postIndex = postIndex,
         toolbarExpanded = toolbarExpanded,
         onClick = { toolbarExpanded = !toolbarExpanded },
         innerPadding = innerPadding,
         actions = postToolbarActions,
-        notesEnabled = notesEnabled,
+        showNotes = showNotes,
       )
+    }
+    val loadMetaErrors = uiState.loadPostMetaErrors[postIndex]
+    AnimatedVisibility(
+      modifier = Modifier.align(Alignment.Companion.BottomEnd),
+      visible = loadMetaErrors?.isEmpty() == false,
+      enter = slideIn { intSize -> IntOffset(x = 0, y = intSize.height) },
+      exit = slideOut { intSize -> IntOffset(x = 0, y = intSize.height) },
+    ) {
+      Card(
+        modifier = Modifier
+          .padding(32.dp)
+          .align(Alignment.BottomCenter),
+        colors = CardDefaults.cardColors(
+          containerColor = MaterialTheme.colorScheme.errorContainer,
+          contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        )
+      ) {
+        if (loadMetaErrors?.tags != null) {
+          Text("Failed to load tags: ${loadMetaErrors.tags}")
+        }
+        if (loadMetaErrors?.notes != null) {
+          Text("Failed to load notes: ${loadMetaErrors.notes}")
+        }
+      }
     }
   }
 }
@@ -159,11 +184,12 @@ fun TopTagsRowPreview() {
 @Composable
 fun PostToolbar(
   post: Post,
+  postIndex: Int,
   toolbarExpanded: Boolean,
   onClick: () -> Unit,
   innerPadding: PaddingValues,
   actions: PostToolbarActions = PostToolbarActions(),
-  notesEnabled: Boolean,
+  showNotes: Boolean,
 ) {
   HorizontalFloatingToolbar(
     modifier = Modifier
@@ -202,7 +228,7 @@ fun PostToolbar(
         contentDescription = null,
       )
     }
-    FilledIconButton(onClick = { actions.onInfoButtonPress(post.id) }) {
+    FilledIconButton(onClick = { actions.onInfoButtonPress(postIndex) }) {
       Icon(
         imageVector = Icons.Outlined.Info,
         contentDescription = null,
@@ -210,7 +236,7 @@ fun PostToolbar(
     }
     FilledIconToggleButton(
       enabled = post.hasNotes,
-      checked = notesEnabled,
+      checked = showNotes,
       onCheckedChange = actions.onNotesButtonPress,
     ) {
       Icon(
@@ -225,7 +251,7 @@ data class PostToolbarActions(
   val onDownloadButtonPress: () -> Unit = {},
   val onCommentButtonPress: () -> Unit = {},
   val onFavoriteButtonPress: () -> Unit = {},
-  val onInfoButtonPress: (postId: Int) -> Unit = {},
+  val onInfoButtonPress: (postIndex: Int) -> Unit = {},
   val onNotesButtonPress: (newVal: Boolean) -> Unit = {},
 )
 
@@ -234,11 +260,12 @@ data class PostToolbarActions(
 fun PostToolbarPreview() {
   JetSnatcherTheme {
     PostToolbar(
-      post = posts.first(),
+      post = posts[0],
+      postIndex = 0,
       toolbarExpanded = true,
       onClick = { },
       innerPadding = PaddingValues(0.dp),
-      notesEnabled = false,
+      showNotes = false,
     )
   }
 }

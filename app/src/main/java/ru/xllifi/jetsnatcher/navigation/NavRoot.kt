@@ -2,7 +2,6 @@ package ru.xllifi.jetsnatcher.navigation
 
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,33 +9,29 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingActionButtonMenu
-import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleFloatingActionButton
-import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,29 +45,40 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
-import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.DialogSceneStrategy
+import androidx.navigation3.scene.DialogSceneStrategy.Companion.dialog
 import androidx.navigation3.ui.NavDisplay
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import ru.xllifi.booru_api.Tag
-import ru.xllifi.booru_api.TagCategory
+import kotlinx.coroutines.runBlocking
+import ru.xllifi.jetsnatcher.extensions.ignoreRoundedCorners
 import ru.xllifi.jetsnatcher.extensions.rememberRoundedCornerNavEntryDecorator
 import ru.xllifi.jetsnatcher.navigation.screen.main.Browser
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserNavKey
-import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserViewModelFactory
+import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderEditDialog
+import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderEditDialogNavKey
 import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderList
 import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderListNavKey
+import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderTypeDialog
+import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderTypeDialogNavKey
 import ru.xllifi.jetsnatcher.navigation.screen.settings.Settings
 import ru.xllifi.jetsnatcher.navigation.screen.settings.SettingsNavKey
+import ru.xllifi.jetsnatcher.navigation.screen.settings.defaultProviderType
+import ru.xllifi.jetsnatcher.proto.settingsDataStore
+import ru.xllifi.jetsnatcher.ui.components.ConfirmDialog
+import ru.xllifi.jetsnatcher.ui.components.ConfirmDialogNavKey
+import ru.xllifi.jetsnatcher.ui.components.TextFieldDialog
+import ru.xllifi.jetsnatcher.ui.components.TextFieldDialogNavKey
 import java.util.concurrent.CancellationException
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -80,7 +86,12 @@ import java.util.concurrent.CancellationException
 fun NavRoot(
   innerPadding: PaddingValues,
 ) {
-  val backStack = rememberNavBackStack(BrowserNavKey(0, emptyList()))
+  val settingsDataStore = LocalContext.current.settingsDataStore
+  fun firstProvider() = runBlocking {
+    settingsDataStore.data.map { it.providers.firstOrNull() }.firstOrNull()
+  }
+
+  val backStack = rememberNavBackStack(BrowserNavKey(firstProvider(), emptyList()))
   val drawerState = rememberDrawerState(
     initialValue = DrawerValue.Closed
   )
@@ -118,7 +129,8 @@ fun NavRoot(
           .clip(MaterialTheme.shapes.extraLarge)
           .shadow(16.dp, shape = MaterialTheme.shapes.extraLarge)
           .background(MaterialTheme.colorScheme.background)
-          .padding(horizontal = 16.dp),
+          .padding(horizontal = 16.dp)
+          .padding(bottom = innerPadding.calculateBottomPadding() + 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
         val density = LocalDensity.current
@@ -158,19 +170,60 @@ fun NavRoot(
             .fillMaxWidth()
         )
         val scope = rememberCoroutineScope()
-        NavigationDrawerItem(
-          icon = { Icon(Icons.Outlined.Image, null) },
-          label = { Text(text = "Browser") },
-          selected = backStack.last()::class == BrowserNavKey::class,
-          onClick = {
-            if (backStack.last()::class != BrowserNavKey::class) {
-              backStack.add(BrowserNavKey(0, emptyList()))
-              scope.launch {
-                drawerState.close()
+        Column(
+          modifier = Modifier
+            .heightIn(max = 256.dp)
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(16.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text(
+            text = "Providers",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+          )
+          val context = LocalContext.current
+          val providerList by context.settingsDataStore.data.map { it.providers }
+            .collectAsState(emptyList())
+          providerList.forEach { provider ->
+            fun isSelected() =
+              backStack.last() is BrowserNavKey && (backStack.last() as BrowserNavKey).providerProto == provider
+            NavigationDrawerItem(
+              icon = { Icon(Icons.Outlined.Image, null) },
+              label = { Text(text = provider.name) },
+              selected = isSelected(),
+              onClick = {
+                if (!isSelected()) {
+                  val currentSearchTags = if (backStack.last() is BrowserNavKey) {
+                    (backStack.last() as BrowserNavKey).searchTags
+                  } else {
+                    emptyList()
+                  }
+                  if (backStack.last() is BrowserNavKey && (backStack.last() as BrowserNavKey).providerProto == null) {
+                    backStack.removeAt(backStack.lastIndex)
+                  }
+                  backStack.add(BrowserNavKey(provider, currentSearchTags))
+                }
+                scope.launch {
+                  drawerState.close()
+                }
               }
+            )
+          }
+          if (providerList.isEmpty()) {
+            Button(
+              onClick = {
+                backStack.add(ProviderEditDialogNavKey(null, null, defaultProviderType))
+              },
+              modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+              Text("Add a provider")
             }
           }
-        )
+        }
+        Box(Modifier.weight(1f)) {}
         NavigationDrawerItem(
           icon = { Icon(Icons.Outlined.Settings, null) },
           label = { Text(text = "Settings") },
@@ -190,15 +243,15 @@ fun NavRoot(
     NavDisplay(
       backStack = backStack,
       entryDecorators = listOf(
-        rememberSceneSetupNavEntryDecorator(),
-        rememberSavedStateNavEntryDecorator(),
+        rememberSaveableStateHolderNavEntryDecorator(),
         rememberRoundedCornerNavEntryDecorator(),
         rememberViewModelStoreNavEntryDecorator(),
       ),
+      sceneStrategy = DialogSceneStrategy(),
       entryProvider = entryProvider {
         entry<BrowserNavKey> { key ->
           Browser(
-            providerIndex = key.providerIndex,
+            providerProto = key.providerProto,
             searchTags = key.searchTags,
             topBackStack = backStack,
             innerPadding = innerPadding,
@@ -207,85 +260,129 @@ fun NavRoot(
         entry<SettingsNavKey> { key ->
           Settings(
             innerPadding = innerPadding,
-            onEditProviders = {
+            onManageProviders = {
               backStack.add(ProviderListNavKey())
-            }
+            },
+            topBackStack = backStack,
           )
         }
         entry<ProviderListNavKey> { key ->
           ProviderList(
             innerPadding = innerPadding,
+            onEditProvider = { provider, index, providerType ->
+              backStack.add(ProviderEditDialogNavKey(provider, index, providerType))
+            },
+            onDeleteProvider = { provider, index ->
+              backStack.add(
+                ConfirmDialogNavKey(
+                title = "Delete ${provider.name}?",
+                description = "This action cannot be undone.",
+                buttons = {
+                  Button(
+                    onClick = {
+                      backStack.removeAll {
+                        it::class == BrowserNavKey::class
+                            && (it as BrowserNavKey).providerProto == provider
+                      }
+                      GlobalScope.launch {
+                        settingsDataStore.updateData { settings ->
+                          val providers = settings.providers.toMutableList()
+                          providers.removeAt(index)
+                          settings.copy(
+                            providers = providers
+                          )
+                        }
+                      }
+                      if (backStack.first() !is BrowserNavKey) {
+                        backStack.add(0, BrowserNavKey(null, emptyList()))
+                      }
+                      backStack.removeAt(backStack.lastIndex)
+                    }
+                  ) {
+                    Text("Yes, delete")
+                  }
+                  Button(
+                    onClick = { backStack.removeAt(backStack.lastIndex) }
+                  ) {
+                    Text("No, cancel")
+                  }
+                }
+              ))
+            },
+          )
+        }
+        entry<ProviderEditDialogNavKey>(
+          metadata = dialog() + ignoreRoundedCorners()
+        )
+        { key ->
+          var providerType by remember { mutableStateOf(key.providerType) }
+          val context = LocalContext.current
+          ProviderEditDialog(
+            provider = key.provider,
+            index = key.index,
+            providerType = providerType,
+            onSelectProviderType = {
+              backStack.add(ProviderTypeDialogNavKey { providerType = it })
+            },
+            onDone = { newProviderProto, index ->
+              GlobalScope.launch {
+                context.settingsDataStore.updateData { settings ->
+                  val providers = settings.providers.toMutableList()
+                  if (index != null && index >= 0) {
+                    val oldProviderProto = providers[index]
+                    providers[index] = newProviderProto
+                    backStack.forEachIndexed { index, it ->
+                      if (it is BrowserNavKey && it.providerProto == oldProviderProto) {
+                        backStack[index] = it.copy(providerProto = newProviderProto)
+                      }
+                    }
+                  } else {
+                    providers.add(newProviderProto)
+                  }
+                  settings.copy(
+                    providers = providers
+                  )
+                }
+              }
+              backStack.removeAt(backStack.lastIndex)
+            }
+          )
+        }
+        entry<ProviderTypeDialogNavKey>(
+          metadata = dialog() + ignoreRoundedCorners()
+        )
+        { key ->
+          ProviderTypeDialog { providerType ->
+            key.onSelectType(providerType)
+            backStack.removeAt(backStack.lastIndex)
+          }
+        }
+        entry<ConfirmDialogNavKey>(
+          metadata = dialog() + ignoreRoundedCorners()
+        )
+        { key ->
+          ConfirmDialog(
+            title = key.title,
+            description = key.description,
+            buttons = key.buttons,
+          )
+        }
+        entry<TextFieldDialogNavKey>(
+          metadata = dialog() + ignoreRoundedCorners()
+        )
+        { key ->
+          TextFieldDialog(
+            title = key.title,
+            description = key.description,
+            initValue = key.initValue,
+            onDone = {
+              key.onDone(it)
+              backStack.removeAt(backStack.lastIndex)
+            },
+            acceptableCharactersRegex = key.acceptableCharactersRegex?.let { Regex(it) }
           )
         }
       },
     )
-  }
-
-  Box(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(innerPadding)
-      .padding(horizontal = 12.dp, vertical = 128.dp)
-  ) {
-    var fabMenuExpanded by rememberSaveable { mutableStateOf(false) }
-    FloatingActionButtonMenu(
-      modifier = Modifier.align(Alignment.BottomEnd),
-      expanded = fabMenuExpanded,
-      button = {
-        ToggleFloatingActionButton(
-          checked = fabMenuExpanded,
-          onCheckedChange = {
-            fabMenuExpanded = !fabMenuExpanded
-          }
-        ) {
-          val imageVector by remember {
-            derivedStateOf {
-              if (checkedProgress > 0.5f) Icons.Filled.Close else Icons.Filled.Add
-            }
-          }
-          Icon(
-            painter = rememberVectorPainter(imageVector),
-            contentDescription = null,
-            modifier = Modifier.animateIcon({ checkedProgress }),
-          )
-        }
-      },
-    ) {
-      FloatingActionButtonMenuItem(
-        onClick = {
-          fabMenuExpanded = false
-          backStack.add(
-            BrowserNavKey(
-              0, listOf(
-                Tag(
-                  label = "tag1",
-                  value = "tag1",
-                  postCount = 0,
-                  category = TagCategory.General,
-                )
-              )
-            )
-          )
-        },
-        text = {
-          Text("Browser")
-        },
-        icon = {
-          Icon(Icons.Outlined.Image, null)
-        },
-      )
-      FloatingActionButtonMenuItem(
-        onClick = {
-          fabMenuExpanded = false
-          backStack.add(SettingsNavKey)
-        },
-        text = {
-          Text("Settings")
-        },
-        icon = {
-          Icon(Icons.Outlined.Settings, null)
-        },
-      )
-    }
   }
 }

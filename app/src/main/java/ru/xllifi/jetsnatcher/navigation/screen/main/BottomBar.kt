@@ -29,6 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import ru.xllifi.jetsnatcher.extensions.FullPreview
+import ru.xllifi.jetsnatcher.extensions.PreviewSetupBrowserViewModel
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.components.Tag
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
@@ -96,16 +97,7 @@ fun BottomBar(
 @FullPreview
 @Composable
 fun BottomBarPreview() {
-  JetSnatcherTheme {
-    val context = LocalContext.current
-    val settings = runBlocking { context.settingsDataStore.data.first() }
-    val viewModel: BrowserViewModel = viewModel(
-      factory = BrowserViewModelFactory(
-        settings,
-        0,
-        emptyList()
-      )
-    )
+  PreviewSetupBrowserViewModel { viewModel ->
     BottomBar(
       viewModel = viewModel,
       innerPadding = PaddingValues.Zero,

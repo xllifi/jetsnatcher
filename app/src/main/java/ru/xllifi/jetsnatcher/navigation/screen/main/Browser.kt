@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -28,26 +29,29 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
-import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
+import ru.xllifi.booru_api.ProviderType
 import ru.xllifi.booru_api.Tag
 import ru.xllifi.jetsnatcher.extensions.rememberRoundedCornerNavEntryDecorator
+import ru.xllifi.jetsnatcher.navigation.screen.main.post_details.PostDetails
 import ru.xllifi.jetsnatcher.navigation.screen.main.post_grid.PostGrid
 import ru.xllifi.jetsnatcher.navigation.screen.main.post_view.PostToolbarActions
 import ru.xllifi.jetsnatcher.navigation.screen.main.post_view.PostView
 import ru.xllifi.jetsnatcher.navigation.screen.main.search.Search
-import ru.xllifi.jetsnatcher.navigation.screen.settings.SettingsNavKey
+import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderEditDialogNavKey
+import ru.xllifi.jetsnatcher.proto.history.HistoryEntryProto
+import ru.xllifi.jetsnatcher.proto.historyDataStore
+import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 
 @Serializable
 data class BrowserNavKey(
-  val providerIndex: Int,
+  val providerProto: ProviderProto?,
   val searchTags: List<Tag>,
 ) : NavKey
 
@@ -57,20 +61,23 @@ object BrowserNavigation {
   object Main : BrowserSubNavKey
 
   @Serializable
+  data class PostDetails(val postIndex: Int) : BrowserSubNavKey
+
+  @Serializable
   object Search : BrowserSubNavKey
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun Browser(
-  providerIndex: Int,
+  providerProto: ProviderProto?,
   searchTags: List<Tag>,
   topBackStack: NavBackStack<NavKey>,
   innerPadding: PaddingValues,
 ) {
   val context = LocalContext.current
-  val settings = runBlocking { context.settingsDataStore.data.first() }
-  if (settings.providerList.isEmpty()) {
+  val providers by context.settingsDataStore.data.map { it.providers }.collectAsState(emptyList())
+  if (providers.isEmpty()) {
     Column(
       modifier = Modifier
         .fillMaxSize(),
@@ -78,34 +85,48 @@ fun Browser(
       horizontalAlignment = Alignment.CenterHorizontally,
     ) {
       Text(
-        text = "No providers found.\nPlease add one in settings.", // TODO: translate
+        text = "No providers found.\nPlease add one in settings or with a button below.", // TODO: translate
         textAlign = TextAlign.Center,
       )
       Button(
         onClick = {
-          topBackStack.add(SettingsNavKey)
+          topBackStack.add(ProviderEditDialogNavKey(providerType = ProviderType.Gelbooru))
         }
       ) {
-        Text("Open settings") // TODO: translate
+        Text("Add a provider") // TODO: translate
       }
+    }
+    return
+  }
+  if (providerProto == null) {
+    Column(
+      modifier = Modifier
+        .fillMaxSize(),
+      verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+      horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+      Text(
+        text = "No provider selected.\nPlease select one in navigation drawer (swipe left-to-right)", // TODO: translate
+        textAlign = TextAlign.Center,
+      )
     }
     return
   }
 
   val viewModel: BrowserViewModel = viewModel(
     factory = BrowserViewModelFactory(
-      settings,
-      providerIndex,
+      context,
+      providerProto,
       searchTags
     )
   )
 
-  val backStack = rememberNavBackStack<BrowserSubNavKey>(BrowserNavigation.Main)
+  val scope = rememberCoroutineScope()
+  val localBackStack = rememberNavBackStack(BrowserNavigation.Main)
   NavDisplay(
-    backStack = backStack,
+    backStack = localBackStack,
     entryDecorators = listOf(
-      rememberSceneSetupNavEntryDecorator(),
-      rememberSavedStateNavEntryDecorator(),
+      rememberSaveableStateHolderNavEntryDecorator(),
       rememberRoundedCornerNavEntryDecorator(),
     ),
     entryProvider = entryProvider {
@@ -113,26 +134,93 @@ fun Browser(
         Main(
           viewModel = viewModel,
           innerPadding = innerPadding,
-          topBackStack = topBackStack,
           postViewToolbarActions = PostToolbarActions(
             onDownloadButtonPress = {},
             onCommentButtonPress = {},
             onFavoriteButtonPress = {},
-            onInfoButtonPress = { postId -> /* Post details screen*/ },
+            onInfoButtonPress = { postIndex ->
+              localBackStack.add(BrowserNavigation.PostDetails(postIndex))
+            },
           ),
           onSearchClick = {
-            backStack.add(BrowserNavigation.Search)
+            localBackStack.add(BrowserNavigation.Search)
           },
+          onEditProviderClick = {
+            topBackStack.add(ProviderEditDialogNavKey(
+              provider = providerProto,
+              index = providers.indexOf(providerProto),
+              providerType = providerProto.providerType
+            ))
+          }
         )
+      }
+      fun addHistoryEntry(tags: List<Tag>) {
+        scope.launch {
+          context.historyDataStore.updateData { history ->
+            val entries = history.entries.toMutableList()
+            entries.removeAll { it.tags == tags }
+            entries.add(HistoryEntryProto(
+              createdAt = System.currentTimeMillis(),
+              tags = tags,
+            ))
+            history.copy(
+              entries = entries
+            )
+          }
+        }
       }
       entry<BrowserNavigation.Search> { key ->
         Search(
-          providerIndex = providerIndex,
+          providerProto = providerProto,
           searchTags = searchTags,
           innerPadding = innerPadding,
-          onNewSearch = { providerIndex, searchTags ->
-            backStack.remove(BrowserNavigation.Search)
-            topBackStack.add(BrowserNavKey(providerIndex, searchTags))
+          onNewSearch = { providerProto, searchTags ->
+            localBackStack.remove(BrowserNavigation.Search)
+            topBackStack.add(BrowserNavKey(providerProto, searchTags))
+            addHistoryEntry(searchTags)
+          },
+        )
+      }
+      entry<BrowserNavigation.PostDetails> { key ->
+        PostDetails(
+          viewModel = viewModel,
+          postIndex = key.postIndex,
+          innerPadding = innerPadding,
+          onSelectedTagsAddToSearchClick = { tags ->
+            topBackStack.add(
+              BrowserNavKey(
+                providerProto = providerProto,
+                searchTags = searchTags + tags,
+              )
+            )
+            addHistoryEntry(searchTags + tags)
+          },
+          onSelectedTagsNewSearchClick = { tags ->
+            topBackStack.add(
+              BrowserNavKey(
+                providerProto = providerProto,
+                searchTags = tags,
+              )
+            )
+            scope.launch {
+              context.historyDataStore.updateData {
+                it.copy(
+                  entries = it.entries + HistoryEntryProto(
+                    createdAt = System.currentTimeMillis() / 1000,
+                    tags = searchTags + tags,
+                  )
+                )
+              }
+            }
+          },
+          onSelectedTagsAddToBlacklistClick = { tags ->
+            scope.launch {
+              context.settingsDataStore.updateData { settings ->
+                settings.copy(
+                  blacklistedTagValues = settings.blacklistedTagValues + tags.map { it.value }
+                )
+              }
+            }
           },
         )
       }
@@ -144,10 +232,10 @@ fun Browser(
 @Composable
 fun Main(
   viewModel: BrowserViewModel,
-  topBackStack: NavBackStack<NavKey>,
   innerPadding: PaddingValues,
   postViewToolbarActions: PostToolbarActions,
   onSearchClick: () -> Unit,
+  onEditProviderClick: () -> Unit,
 ) {
   val uiState by viewModel.uiState.collectAsState()
   SharedTransitionLayout {
@@ -156,14 +244,12 @@ fun Main(
         modifier = Modifier.weight(1f),
         viewModel = viewModel,
         innerPadding = innerPadding,
-        onLoadPostsRequest = {
+        onLoadPostsRequest = { evenIfNoMore ->
           GlobalScope.launch {
-            viewModel.loadPosts()
+            viewModel.loadPosts(evenIfNoMore)
           }
         },
-        onOpenSettings = {
-          topBackStack.add(SettingsNavKey)
-        }
+        onEditProviderClick
       )
       AnimatedVisibility(
         visible = !uiState.expandPost
@@ -187,7 +273,7 @@ fun Main(
       exit = fadeOut(),
     ) {
       PostView(
-        browserViewModel = viewModel,
+        viewModel = viewModel,
         animatedVisibilityScope = this,
         onBack = { viewModel.expandPost(to = false) },
         onSelectedPostChange = { viewModel.selectPost(it) },
