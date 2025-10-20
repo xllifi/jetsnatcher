@@ -17,18 +17,14 @@ Written with Jetpack Compose. Trying to follow Material 3 design.
 - Predictive back
 - Tag-based search with tag autocomplete
 - [Gelbooru](https://gelbooru.com) and [Rule34.xxx](https://rule34.xxx) providers
-  - Currently not configurable, only fetches posts from Gelbooru
+- Search history
 
 **Planned**
 
-- Configure providers in settings
+- Blacklisted tags
+- Favorite searches
 - More providers
 - Videos
-- Blacklisted tags
 - Offline collections
 - Download posts
 - Better readme
-
-# Contribute
-Pull requests welcome!  
-Expect breaking changes though. I'm still not fully done with core architecture.
