@@ -154,14 +154,17 @@ fun Browser(
           }
         )
       }
-      fun addHistoryEntry(tags: List<Tag>) {
+      fun newSearch(tags: List<Tag>) {
+        topBackStack.add(BrowserNavKey(providerProto, tags))
         scope.launch {
           context.historyDataStore.updateData { history ->
             val entries = history.entries.toMutableList()
+            val isFavorite = entries.firstOrNull { it.tags == tags }?.isFavorite ?: false
             entries.removeAll { it.tags == tags }
             entries.add(HistoryEntryProto(
               createdAt = System.currentTimeMillis(),
               tags = tags,
+              isFavorite = isFavorite,
             ))
             history.copy(
               entries = entries
@@ -174,10 +177,9 @@ fun Browser(
           providerProto = providerProto,
           searchTags = searchTags,
           innerPadding = innerPadding,
-          onNewSearch = { providerProto, searchTags ->
+          onNewSearch = { providerProto, tags ->
             localBackStack.remove(BrowserNavigation.Search)
-            topBackStack.add(BrowserNavKey(providerProto, searchTags))
-            addHistoryEntry(searchTags)
+            newSearch(tags)
           },
         )
       }
@@ -186,33 +188,8 @@ fun Browser(
           viewModel = viewModel,
           postIndex = key.postIndex,
           innerPadding = innerPadding,
-          onSelectedTagsAddToSearchClick = { tags ->
-            topBackStack.add(
-              BrowserNavKey(
-                providerProto = providerProto,
-                searchTags = searchTags + tags,
-              )
-            )
-            addHistoryEntry(searchTags + tags)
-          },
-          onSelectedTagsNewSearchClick = { tags ->
-            topBackStack.add(
-              BrowserNavKey(
-                providerProto = providerProto,
-                searchTags = tags,
-              )
-            )
-            scope.launch {
-              context.historyDataStore.updateData {
-                it.copy(
-                  entries = it.entries + HistoryEntryProto(
-                    createdAt = System.currentTimeMillis() / 1000,
-                    tags = searchTags + tags,
-                  )
-                )
-              }
-            }
-          },
+          onSelectedTagsAddToSearchClick = { tags -> newSearch(searchTags + tags) },
+          onSelectedTagsNewSearchClick = { tags -> newSearch(tags) },
           onSelectedTagsAddToBlacklistClick = { tags ->
             scope.launch {
               context.settingsDataStore.updateData { settings ->

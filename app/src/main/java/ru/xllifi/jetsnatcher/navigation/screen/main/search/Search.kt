@@ -3,6 +3,7 @@ package ru.xllifi.jetsnatcher.navigation.screen.main.search
 import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideIn
@@ -37,8 +38,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.outlined.Bookmarks
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -66,6 +69,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -74,18 +78,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import ru.xllifi.booru_api.Tag
 import ru.xllifi.booru_api.TagCategory
 import ru.xllifi.jetsnatcher.extensions.FullPreview
+import ru.xllifi.jetsnatcher.extensions.dpToPx
 import ru.xllifi.jetsnatcher.extensions.isImeHalfVisible
 import ru.xllifi.jetsnatcher.extensions.toReal
+import ru.xllifi.jetsnatcher.proto.history.HistoryEntryProto
 import ru.xllifi.jetsnatcher.proto.historyDataStore
 import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.ui.components.Tag
 import ru.xllifi.jetsnatcher.ui.components.TextField
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
+import kotlin.collections.addAll
 
 fun timestampToRelativeTimeSpan(timestamp: Long): String {
   return DateUtils.getRelativeTimeSpanString(
@@ -118,7 +127,7 @@ fun Search(
 
     val context = LocalContext.current
     val history by context.historyDataStore.data.collectAsState(runBlocking { context.historyDataStore.data.first() })
-    var showSavedInsteadOfRecent by remember { mutableStateOf(false) }
+    var onlyShowFavorite by remember { mutableStateOf(false) }
 
     Column(
       modifier = Modifier
@@ -183,58 +192,93 @@ fun Search(
               onRemoveTag = { mutableTags.remove(it) }
             )
           } else {
-            LazyColumn(
-              modifier = Modifier
-                .clip(MaterialTheme.shapes.medium),
-              verticalArrangement = Arrangement.spacedBy(4.dp),
+            this@Column.AnimatedVisibility(
+              visible = !onlyShowFavorite,
+              enter = slideIn { IntOffset(x = -it.width, y = 0) } + fadeIn(),
+              exit = slideOut { IntOffset(x = it.width, y = 0) } + fadeOut(),
             ) {
-              items(history.entries.reversed()) { historyEntry ->
-                Box(
+              Column(
+                modifier = Modifier
+                  .fillMaxWidth()
+              ) {
+                Text(
+                  text = "Recent searches",
+                  modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp)
+                )
+                LazyColumn(
                   modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .clickable {
-                      mutableTags.removeAll { true }
-                      mutableTags.addAll(historyEntry.tags)
-                    }
-                    .padding(12.dp)
-                    .padding(top = 12.dp),
-  //                horizontalArrangement = Arrangement.spacedBy(4.dp),
-  //                verticalAlignment = Alignment.CenterVertically,
+                    .clip(MaterialTheme.shapes.medium),
+                  verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                  LazyRow(
-                    modifier = Modifier
-                      .clip(MaterialTheme.shapes.extraSmall),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                  ) {
-                    items(historyEntry.tags) { tag ->
-                      Tag(
-                        tag = tag,
-                        baseBgColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        baseFgColor = MaterialTheme.colorScheme.primary,
-                      ) { _, _, fgColor, bgColor ->
-                        Text(
-                          text = tag.label,
-                          style = MaterialTheme.typography.bodyLarge,
-                          color = fgColor,
-                          modifier = Modifier
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .background(bgColor)
-                            .padding(8.dp, 6.dp),
-                        )
+                  items(history.entries.reversed()) { historyEntry ->
+                    HistoryEntry(
+                      historyEntry = historyEntry,
+                      onNewSearch = {
+                        mutableTags.removeAll { true }
+                        mutableTags.addAll(historyEntry.tags)
+                      },
+                      onToggleFavorite = {
+                        GlobalScope.launch {
+                          context.historyDataStore.updateData {
+                            val entries = it.entries.toMutableList()
+                            val index = entries.indexOf(historyEntry)
+                            if (index == -1) return@updateData it
+                            entries[index] = historyEntry.copy(
+                              isFavorite = !historyEntry.isFavorite
+                            )
+                            it.copy(
+                              entries = entries
+                            )
+                          }
+                        }
                       }
-                    }
+                    )
                   }
-                  Text(
-                    text = timestampToRelativeTimeSpan(historyEntry.createdAt),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                      color = MaterialTheme.colorScheme.onSurface.copy(0.4f)
-                    ),
-                    modifier = Modifier
-                      .align(Alignment.TopStart)
-                      .offset(y = -20.dp)
-                  )
+                }
+              }
+            }
+            this@Column.AnimatedVisibility(
+              visible = onlyShowFavorite,
+              enter = slideIn { IntOffset(x = -it.width, y = 0) } + fadeIn(),
+              exit = slideOut { IntOffset(x = it.width, y = 0) } + fadeOut(),
+            ) {
+              Column(
+                modifier = Modifier
+                  .fillMaxWidth()
+              ) {
+                Text(
+                  text = "Favorite searches",
+                  modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp)
+                )
+                LazyColumn(
+                  modifier = Modifier
+                    .clip(MaterialTheme.shapes.medium),
+                  verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                  items(history.entries.filter { it.isFavorite }.reversed()) { historyEntry ->
+                    HistoryEntry(
+                      historyEntry = historyEntry,
+                      onNewSearch = {
+                        mutableTags.removeAll { true }
+                        mutableTags.addAll(historyEntry.tags)
+                      },
+                      onToggleFavorite = {
+                        GlobalScope.launch {
+                          context.historyDataStore.updateData {
+                            val entries = it.entries.toMutableList()
+                            val index = entries.indexOf(historyEntry)
+                            if (index == -1) return@updateData it
+                            entries[index] = historyEntry.copy(
+                              isFavorite = !historyEntry.isFavorite
+                            )
+                            it.copy(
+                              entries = entries
+                            )
+                          }
+                        }
+                      }
+                    )
+                  }
                 }
               }
             }
@@ -287,8 +331,8 @@ fun Search(
           .fillMaxSize()
       ) {
         HistoryFabMenu(
-          onSavedSearchesClick = {},
-          onRecentSearchesClick = {},
+          onFavoriteSearchesClick = { onlyShowFavorite = true },
+          onRecentSearchesClick = { onlyShowFavorite = false },
         )
       }
     }
@@ -385,6 +429,96 @@ fun SearchTagsFlowRow(
           )
         }
       }
+    }
+  }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun HistoryEntry(
+  historyEntry: HistoryEntryProto,
+  onNewSearch: (tags: List<Tag>) -> Unit,
+  onToggleFavorite: (historyEntry: HistoryEntryProto) -> Unit,
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(4.dp)
+  ) {
+    Box(
+      modifier = Modifier
+        .weight(1f)
+        .height(64.dp)
+        .clip(MaterialTheme.shapes.extraSmall)
+        .background(MaterialTheme.colorScheme.surfaceContainer)
+        .clickable { onNewSearch(historyEntry.tags) }
+        .padding(12.dp)
+        .padding(top = 8.dp),
+    )
+    {
+      LazyRow(
+        modifier = Modifier
+          .clip(MaterialTheme.shapes.extraSmall),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+      ) {
+        items(historyEntry.tags) { tag ->
+          Tag(
+            tag = tag,
+            baseBgColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            baseFgColor = MaterialTheme.colorScheme.primary,
+          ) { _, _, fgColor, bgColor ->
+            Text(
+              text = tag.label,
+              style = MaterialTheme.typography.bodyLarge,
+              color = fgColor,
+              modifier = Modifier
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(bgColor)
+                .padding(8.dp, 6.dp),
+            )
+          }
+        }
+      }
+      Text(
+        text = timestampToRelativeTimeSpan(historyEntry.createdAt),
+        style = MaterialTheme.typography.labelSmall.copy(
+          color = MaterialTheme.colorScheme.onSurface.copy(0.4f)
+        ),
+        modifier = Modifier
+          .align(Alignment.TopStart)
+          .offset(y = -18.dp)
+      )
+    }
+    Box(
+      modifier = Modifier
+        .size(64.dp)
+        .clip(MaterialTheme.shapes.extraSmall)
+        .background(MaterialTheme.colorScheme.surfaceContainer)
+        .clickable { onToggleFavorite(historyEntry) },
+      contentAlignment = Alignment.Center,
+    ) {
+      val progress by animateFloatAsState(if (historyEntry.isFavorite) 1f else 0f)
+      val imageVector by remember {
+        derivedStateOf {
+          if (progress > 0.5f) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder
+        }
+      }
+      val colorScheme = MaterialTheme.colorScheme
+      Icon(
+        painter = rememberVectorPainter(imageVector),
+        contentDescription = null,
+        tint = if (historyEntry.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier
+          .animateIcon(
+            checkedProgress = { progress },
+            color = { progress ->
+              lerp(colorScheme.onSurface, colorScheme.primary, progress)
+            },
+            size = { progress ->
+              28.dp + (8.dp * progress)
+            }
+          )
+        ,
+      )
     }
   }
 }
@@ -546,7 +680,7 @@ fun BoxScope.SearchFab(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun BoxScope.HistoryFabMenu(
-  onSavedSearchesClick: () -> Unit,
+  onFavoriteSearchesClick: () -> Unit,
   onRecentSearchesClick: () -> Unit,
 ) {
   var fabMenuExpanded by rememberSaveable { mutableStateOf(false) }
@@ -577,12 +711,12 @@ fun BoxScope.HistoryFabMenu(
     },
   ) {
     FloatingActionButtonMenuItem(
-      onClick = onSavedSearchesClick,
+      onClick = onFavoriteSearchesClick,
       text = {
-        Text("Saved Searches") // TODO: Translate
+        Text("Favorite Searches") // TODO: Translate
       },
       icon = {
-        Icon(Icons.Outlined.Bookmarks, null)
+        Icon(Icons.Outlined.FavoriteBorder, null)
       },
     )
     FloatingActionButtonMenuItem(

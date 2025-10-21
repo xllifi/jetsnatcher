@@ -10,4 +10,5 @@ import ru.xllifi.booru_api.Tag
 data class HistoryEntryProto(
   @ProtoNumber(1) val createdAt: Long,
   @ProtoNumber(2) val tags: List<Tag>,
+  @ProtoNumber(3) val isFavorite: Boolean = false,
 )
