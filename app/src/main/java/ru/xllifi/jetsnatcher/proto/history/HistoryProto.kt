@@ -1,8 +1,11 @@
 package ru.xllifi.jetsnatcher.proto.history
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class HistoryProto(
-  val entries: List<HistoryEntryProto> = emptyList(),
+  @ProtoNumber(1) val entries: List<HistoryEntryProto> = emptyList(),
 )
