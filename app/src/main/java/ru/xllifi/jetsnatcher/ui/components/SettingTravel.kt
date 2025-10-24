@@ -34,10 +34,10 @@ fun SettingTravel(
 ) {
   Row (
     modifier = Modifier
+      .clip(MaterialTheme.shapes.medium)
       .clickable {
         onClick()
       }
-      .clip(MaterialTheme.shapes.medium)
       .background(MaterialTheme.colorScheme.surfaceContainer)
       .heightIn(min = 64.dp)
       .padding(16.dp),
