@@ -14,22 +14,26 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiationConfig
 import io.ktor.client.request.get
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
-import io.ktor.client.statement.request
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.xml.xml
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.serialization.XML
 import ru.xllifi.booru_api.Note
 import ru.xllifi.booru_api.ProviderType
-import ru.xllifi.booru_api.errors.UnauthorizedException
 import ru.xllifi.booru_api.toUnixTimestamp
 
 class Rule34xxx(
-  override var httpClient: HttpClient = HttpClient(CIO) { install(ContentNegotiation, defaultContentConfig) },
+  override var httpClient: HttpClient = HttpClient(CIO) {
+    install(
+      ContentNegotiation,
+      defaultContentConfig
+    )
+  },
   override var routes: Routes = defaultRoutes,
 ) : Provider(httpClient, routes, ProviderType.Rule34xxx) {
   override suspend fun getAutoComplete(tagPart: String): List<Tag> {
@@ -64,16 +68,34 @@ class Rule34xxx(
     return body.map { it.toGenericNote() }
   }
 
+  @OptIn(DelicateCoroutinesApi::class)
   override suspend fun getTags(
     tags: List<String>,
     page: Int,
     limit: Int,
   ): List<Tag> {
-    // TODO: split every tag into its own request since rule34.xxx
-    //  doesn't support searching for multiple tags at once
-    val response = httpClient.get(this.routes.parseTags(tags, page, limit))
-    val body: List<Rule34xxxTag> = response.body()
-    return body.map { it.toGenericTag() }
+    val deferredResults = tags.map {
+      GlobalScope.async {
+        httpClient.get(
+          this@Rule34xxx.routes.parseTags(listOf(it), page, limit)
+        )
+      }
+    }
+    val respTags = deferredResults
+      .awaitAll()
+      .mapIndexed { index, response ->
+        response
+          .body<List<Rule34xxxTag>>()
+          .firstOrNull()
+          ?: Rule34xxxTag(
+            type = Rule34xxxTagType.Unknown,
+            count = -1,
+            name = tags[index],
+            ambiguous = false,
+            id = index,
+          )
+      }
+    return respTags.map { it.toGenericTag() }
   }
 
   companion object {
@@ -93,7 +115,7 @@ class Rule34xxx(
       publicFacingPostPage = "https://rule34.xxx/index.php?page=post&s=view&id={id}",
       autocomplete = "autocomplete.php?q={tagPart}",
       posts = "index.php?page=dapi&s=post&q=index&limit={limit}&pid={page}&tags={tags}",
-      tags = "index.php?page=dapi&s=tag&q=index&limit={limit}&pid={page}&names={tags}",
+      tags = "index.php?page=dapi&s=tag&q=index&limit={limit}&pid={page}&name={tags}",
       comments = "index.php?page=dapi&s=comment&q=index&post_id={postId}",
       notes = "index.php?page=dapi&s=note&q=index&post_id={postId}",
       authSuffix = null,
