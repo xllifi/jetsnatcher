@@ -1,12 +1,13 @@
 package ru.xllifi.jetsnatcher.navigation.screen.main.post_view
 
+import android.util.Log
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -18,16 +19,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -51,17 +50,22 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import coil3.SingletonImageLoader
+import coil3.compose.SubcomposeAsyncImage
+import coil3.network.NetworkHeaders
+import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.jobinlawrance.downloadprogressinterceptor.DOWNLOAD_IDENTIFIER_HEADER
 import ru.xllifi.jetsnatcher.extensions.AnimateCornerSize
 import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.extensions.isHorizontal
 import ru.xllifi.jetsnatcher.extensions.pxToDp
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserViewModel
+import ru.xllifi.jetsnatcher.progressEventBus
 import kotlin.coroutines.cancellation.CancellationException
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedTransitionScope.PostView(
   modifier: Modifier = Modifier,
@@ -149,6 +153,15 @@ fun SharedTransitionScope.PostView(
           contentAlignment = Alignment.Center,
         ) {
           var showNotes by remember { mutableStateOf(false) }
+
+          var isLoading by remember { mutableStateOf(false) }
+          var loadingProgress by remember { mutableFloatStateOf(0f) }
+          val animatedProgress by animateFloatAsState(loadingProgress)
+          val disposable = progressEventBus.observable().subscribe {
+            if (it.downloadIdentifier == uiState.posts[index].getImageForFullscreen().url) {
+              loadingProgress = it.progress / 100f
+            }
+          }
           // Image
           PostImage(
             modifier = scaleModifier
@@ -163,16 +176,21 @@ fun SharedTransitionScope.PostView(
                 translationX = offsetValue.x * scaleValue,
                 translationY = offsetValue.y * scaleValue,
                 transformOrigin = TransformOrigin(0f, 0f)
-              )
-            ,
+              ),
             viewModel = viewModel,
             postIndex = index,
             isSelected = uiState.selectedPostIndex == index,
             animatedVisibilityScope = animatedVisibilityScope,
             cornerSize = cornerSize,
-            innerPadding = innerPadding,
             alpha = alpha,
             showNotes = showNotes,
+            onLoading = {
+              isLoading = true
+            },
+            onSuccess = {
+              isLoading = false
+              disposable.dispose()
+            }
           )
           // Info overlay
           PostOverlay(
@@ -189,6 +207,26 @@ fun SharedTransitionScope.PostView(
             ),
             showNotes = showNotes,
           )
+          AnimatedVisibility(
+            modifier = Modifier.fillMaxSize(),
+            visible = isLoading,
+            enter = fadeIn(),
+            exit = fadeOut(),
+          ) {
+            Box(
+              modifier = Modifier.fillMaxSize(),
+            ) {
+              CircularWavyProgressIndicator(
+                progress = { animatedProgress },
+                modifier = Modifier
+                  .align(Alignment.TopCenter)
+                  .padding(top = innerPadding.calculateTopPadding() + 56.dp)
+                  .size(40.dp)
+                  .renderInSharedTransitionScopeOverlay(zIndexInOverlay = 5f)
+                  .alpha(alpha)
+              )
+            }
+          }
         }
       }
     }
@@ -204,9 +242,10 @@ private fun SharedTransitionScope.PostImage(
   isSelected: Boolean,
   animatedVisibilityScope: AnimatedVisibilityScope,
   cornerSize: Dp,
-  innerPadding: PaddingValues,
   alpha: Float,
   showNotes: Boolean,
+  onLoading: () -> Unit = {},
+  onSuccess: () -> Unit = {},
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val post by remember { derivedStateOf { uiState.posts[postIndex] } }
@@ -234,12 +273,11 @@ private fun SharedTransitionScope.PostImage(
         .aspectRatio(aspectRatio)
         .fillMaxSize()
         .align(Alignment.Center)
-      var isLoading by remember { mutableStateOf(false) }
       var imageSize by remember { mutableStateOf(IntSize.Zero) }
 
       var shownNote by remember { mutableIntStateOf(-1) }
 
-      AsyncImage(
+      Box(
         modifier = modifier
           .onSizeChanged { imageSize = it }
           .conditional(
@@ -259,15 +297,41 @@ private fun SharedTransitionScope.PostImage(
               }
             }
           },
-        model = ImageRequest.Builder(context)
-          .data(img.url)
-          .size(width = img.width, height = img.height)
-          .crossfade(false)
-          .build(),
-        contentDescription = null,
-        onLoading = { isLoading = true },
-        onSuccess = { isLoading = false }
-      )
+      ) {
+        SubcomposeAsyncImage(
+          modifier = Modifier.fillMaxSize(),
+          imageLoader = SingletonImageLoader.get(context),
+          model = ImageRequest.Builder(context)
+            .data(img.url)
+            .crossfade(false)
+            .httpHeaders(
+              NetworkHeaders.Builder()
+                .add(DOWNLOAD_IDENTIFIER_HEADER, img.url)
+                .build()
+            )
+            .size(width = img.width, height = img.height)
+            .build(),
+          contentDescription = null,
+          loading = {
+            Box(
+              modifier = Modifier.fillMaxSize(),
+              contentAlignment = Alignment.Center,
+            ) {
+              SubcomposeAsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                  .data(previewImage.url)
+                  .crossfade(false)
+                  .size(width = previewImage.width, height = previewImage.height)
+                  .build(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+              )
+            }
+          },
+          onLoading = { onLoading() },
+          onSuccess = { onSuccess() }
+        )
+      }
 
       // region notes
       if (post.hasNotes && showNotes && post.notes != null) {
@@ -284,48 +348,6 @@ private fun SharedTransitionScope.PostImage(
         )
       }
       // endregion
-
-      if (isLoading) {
-        AsyncImage(
-          modifier = modifier
-            .conditional(
-              isSelected,
-              Modifier.sharedBounds(
-                sharedContentState = rememberSharedContentState(post.id),
-                animatedVisibilityScope = animatedVisibilityScope,
-                enter = EnterTransition.None,
-                exit = ExitTransition.None,
-              ),
-            )
-            .clip(RoundedCornerShape(cornerSize)),
-          model = ImageRequest.Builder(context)
-            .data(previewImage.url)
-            .size(width = previewImage.width, height = previewImage.height)
-            .build(),
-          contentDescription = null
-        )
-      }
-
-      AnimatedVisibility(
-        modifier = Modifier.fillMaxSize(),
-        visible = isLoading,
-        enter = EnterTransition.None,
-        exit = fadeOut(),
-      ) {
-        Box(
-          modifier = Modifier.fillMaxSize()
-        ) {
-          ContainedLoadingIndicator(
-            modifier = Modifier
-              .padding(top = innerPadding.calculateTopPadding() + 56.dp)
-              .width(40.dp)
-              .height(40.dp)
-              .renderInSharedTransitionScopeOverlay(zIndexInOverlay = 5f)
-              .align(Alignment.TopCenter)
-              .alpha(alpha)
-          )
-        }
-      }
     }
   }
 }

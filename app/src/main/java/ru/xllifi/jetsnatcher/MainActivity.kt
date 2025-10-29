@@ -1,6 +1,7 @@
 package ru.xllifi.jetsnatcher
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -13,14 +14,17 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
-import coil3.request.crossfade
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import com.jobinlawrance.downloadprogressinterceptor.DownloadProgressInterceptor
+import com.jobinlawrance.downloadprogressinterceptor.ProgressEventBus
+import okhttp3.OkHttpClient
 import ru.xllifi.booru_api.Image
 import ru.xllifi.booru_api.Post
 import ru.xllifi.booru_api.Rating
 import ru.xllifi.jetsnatcher.navigation.NavRoot
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
-val posts = listOf(
+val samplePosts = listOf(
   Post(
     id = 0,
     worstQualityImage = Image(
@@ -113,6 +117,8 @@ val posts = listOf(
   )
 )
 
+val progressEventBus: ProgressEventBus = ProgressEventBus()
+
 @OptIn(ExperimentalSharedTransitionApi::class)
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -121,7 +127,6 @@ class MainActivity : ComponentActivity() {
     setContent {
       setSingletonImageLoaderFactory { context ->
         ImageLoader.Builder(context)
-          .crossfade(true)
           .memoryCache {
             MemoryCache.Builder()
               .maxSizePercent(context, 0.15)
@@ -133,9 +138,20 @@ class MainActivity : ComponentActivity() {
               .maxSizePercent(0.02)
               .build()
           }
+          .components {
+            add(
+              OkHttpNetworkFetcherFactory(
+                callFactory = {
+                  OkHttpClient.Builder()
+                    .addNetworkInterceptor(DownloadProgressInterceptor(progressEventBus))
+                    .build()
+                }
+              )
+            )
+          }
           .build()
       }
-
+      
       JetSnatcherTheme {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
           NavRoot(innerPadding)

@@ -53,7 +53,7 @@ import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.extensions.isHorizontal
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserViewModel
-import ru.xllifi.jetsnatcher.posts
+import ru.xllifi.jetsnatcher.samplePosts
 import ru.xllifi.jetsnatcher.ui.components.Tag
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
@@ -260,7 +260,7 @@ data class PostToolbarActions(
 fun PostToolbarPreview() {
   JetSnatcherTheme {
     PostToolbar(
-      post = posts[0],
+      post = samplePosts[0],
       postIndex = 0,
       toolbarExpanded = true,
       onClick = { },

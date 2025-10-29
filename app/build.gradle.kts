@@ -78,6 +78,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.kotlinx.serialization.protobuf)
     implementation(libs.bundles.coil)
+    implementation(libs.dlprogress.okhttp3)
     implementation(libs.material3)
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.material.icons.extended)

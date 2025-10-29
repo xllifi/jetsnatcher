@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.ColorImage
+import coil3.SingletonImageLoader
 import coil3.annotation.ExperimentalCoilApi
 import coil3.asImage
 import coil3.compose.AsyncImage
@@ -81,7 +82,6 @@ import ru.xllifi.jetsnatcher.R
 import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.extensions.plus
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserViewModel
-import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 import ru.xllifi.jetsnatcher.ui.theme.sizes
@@ -276,6 +276,7 @@ private fun SharedTransitionScope.Card(
             .aspectRatio(img.width.toFloat() / img.height)
             .fillMaxSize()
           ,
+          imageLoader = SingletonImageLoader.get(LocalContext.current),
           model = ImageRequest.Builder(LocalContext.current)
             .data(img.url)
             .size(width = img.width, height = img.height)
