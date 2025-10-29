@@ -41,14 +41,14 @@ fun DoubleActionListEntry(
   onSecondaryAction: () -> Unit,
 ) {
   Row(
-    modifier = Modifier.Companion
+    modifier = Modifier
       .fillMaxWidth()
       .height(56.dp),
-    verticalAlignment = Alignment.Companion.CenterVertically,
+    verticalAlignment = Alignment.CenterVertically,
     horizontalArrangement = Arrangement.spacedBy(8.dp)
   ) {
     Row(
-      modifier = Modifier.Companion
+      modifier = Modifier
         .weight(1f)
         .fillMaxHeight()
         .clip(
@@ -60,14 +60,14 @@ fun DoubleActionListEntry(
         .background(MaterialTheme.colorScheme.surfaceContainer)
         .clickable { onPrimaryAction() }
         .padding(horizontal = 12.dp),
-      verticalAlignment = Alignment.Companion.CenterVertically,
+      verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
       Icon(
         imageVector = primaryActionIcon,
         contentDescription = null,
         tint = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.Companion.size(28.dp),
+        modifier = Modifier.size(28.dp),
       )
       Column {
         Text(
@@ -83,7 +83,7 @@ fun DoubleActionListEntry(
       }
     }
     Box(
-      modifier = Modifier.Companion
+      modifier = Modifier
         .fillMaxHeight()
         .clip(
           MaterialTheme.shapes.medium.copy(
@@ -96,13 +96,13 @@ fun DoubleActionListEntry(
           onSecondaryAction()
         }
         .padding(horizontal = 12.dp),
-      contentAlignment = Alignment.Companion.Center,
+      contentAlignment = Alignment.Center,
     ) {
       Icon(
         imageVector = secondaryActionIcon,
         contentDescription = null,
         tint = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.Companion.size(28.dp),
+        modifier = Modifier.size(28.dp),
       )
     }
   }

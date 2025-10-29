@@ -31,16 +31,14 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.IntSize
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
 import ru.xllifi.jetsnatcher.extensions.isHorizontal
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import kotlin.math.absoluteValue
 
 @Composable
 fun AllGestures(
-  modifier: Modifier = Modifier.Companion,
+  modifier: Modifier = Modifier,
   doubleTapScale: Float = 2f,
   maxScale: Float = 4f,
   predictiveBackProgress: Float,
@@ -65,7 +63,7 @@ fun AllGestures(
       spring()
     }
   )
-  var offset by remember { mutableStateOf(Offset.Companion.Zero) }
+  var offset by remember { mutableStateOf(Offset.Zero) }
   val offsetValue by animateOffsetAsState(
     targetValue = offset,
     animationSpec = if (isPressed) {
@@ -83,13 +81,13 @@ fun AllGestures(
       spring()
     }
   )
-  var intSize: IntSize = IntSize.Companion.Zero
-  var globalPosition: Offset = Offset.Companion.Zero
+  var intSize: IntSize = IntSize.Zero
+  var globalPosition: Offset = Offset.Zero
 
   LaunchedEffect(predictiveBackProgress) {
     if (predictiveBackProgress > 0f) {
       scale = 1f
-      offset = Offset.Companion.Zero
+      offset = Offset.Zero
       dragToDismiss = 0f
     }
   }
@@ -119,7 +117,7 @@ fun AllGestures(
     }
     // Offset
     if (scale <= 1f) {
-      offset = Offset.Companion.Zero
+      offset = Offset.Zero
     } else {
       // region prepare
       var retX = offset.x
@@ -223,7 +221,7 @@ fun AllGestures(
     content(
       scaleValue,
       offsetValue,
-      Modifier.Companion
+      Modifier
         .onSizeChanged { intSize = it }
         .onGloballyPositioned { globalPosition = it.positionInWindow() },
     )
@@ -246,7 +244,7 @@ private data class DoubleTapResult(
   val firstTapTime: Long,
   val detected: Boolean = false,
   val scale: Float = 1f,
-  val offset: Offset = Offset.Companion.Zero,
+  val offset: Offset = Offset.Zero,
 )
 
 /**
@@ -276,7 +274,7 @@ private fun handleDoubleTap(
         val newOffset: Offset
         if (currentScale > 1f) {
           newScale = 1f
-          newOffset = Offset.Companion.Zero
+          newOffset = Offset.Zero
         } else {
           newScale = doubleTapScale
           newOffset = Offset(
@@ -355,7 +353,7 @@ private fun handleZoomPanDrag(
     newScale = newScale.coerceIn(1f, maxScale)
     if (newScale > 1f) { // Only allow panning if zoomed in
       newOffset = currentOffset + (pan / newScale)
-      if (newScale < maxScale && centroid != Offset.Companion.Unspecified) { // Only allow centroid when scale can be changed
+      if (newScale < maxScale && centroid != Offset.Unspecified) { // Only allow centroid when scale can be changed
         newOffset = newOffset - (centroid / oldScale - centroid / newScale) +
           (globalPosition / oldScale - globalPosition / newScale)
       }

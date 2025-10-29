@@ -163,7 +163,8 @@ fun SharedTransitionScope.PostView(
                 translationX = offsetValue.x * scaleValue,
                 translationY = offsetValue.y * scaleValue,
                 transformOrigin = TransformOrigin(0f, 0f)
-              ),
+              )
+            ,
             viewModel = viewModel,
             postIndex = index,
             isSelected = uiState.selectedPostIndex == index,

@@ -85,7 +85,7 @@ fun PostOverlay(
     }
     var toolbarExpanded by remember { mutableStateOf(false) }
     AnimatedVisibility(
-      modifier = Modifier.align(Alignment.Companion.BottomEnd),
+      modifier = Modifier.align(Alignment.BottomEnd),
       visible = show,
       enter = slideIn { intSize -> IntOffset(x = 0, y = intSize.height) },
       exit = slideOut { intSize -> IntOffset(x = 0, y = intSize.height) },
@@ -102,7 +102,7 @@ fun PostOverlay(
     }
     val loadMetaErrors = uiState.loadPostMetaErrors[postIndex]
     AnimatedVisibility(
-      modifier = Modifier.align(Alignment.Companion.BottomEnd),
+      modifier = Modifier.align(Alignment.BottomEnd),
       visible = loadMetaErrors?.isEmpty() == false,
       enter = slideIn { intSize -> IntOffset(x = 0, y = intSize.height) },
       exit = slideOut { intSize -> IntOffset(x = 0, y = intSize.height) },
@@ -137,17 +137,17 @@ fun TopTagsRow(
     horizontalArrangement = Arrangement.spacedBy(4.dp),
     modifier = Modifier
       .pointerInteropFilter { false }
-      .graphicsLayer(compositingStrategy = CompositingStrategy.Companion.Offscreen)
+      .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
       .drawWithContent {
         drawContent()
         drawRect(
-          brush = Brush.Companion.horizontalGradient(
-            0.00f to Color.Companion.Black,
-            0.04f to Color.Companion.Transparent,
-            0.96f to Color.Companion.Transparent,
-            1.00f to Color.Companion.Black,
+          brush = Brush.horizontalGradient(
+            0.00f to Color.Black,
+            0.04f to Color.Transparent,
+            0.96f to Color.Transparent,
+            1.00f to Color.Black,
           ),
-          blendMode = BlendMode.Companion.DstOut,
+          blendMode = BlendMode.DstOut,
         )
       }
       .padding(top = innerPadding.calculateTopPadding())
@@ -157,7 +157,7 @@ fun TopTagsRow(
       Tag(it) { label, value, fgColor, bgColor ->
         Text(
           text = label,
-          color = Color.Companion.Black,
+          color = Color.Black,
           modifier = Modifier
             .clip(MaterialTheme.shapes.small)
             .background(fgColor)

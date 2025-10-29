@@ -40,8 +40,8 @@ fun BoxScope.RenderNotes(
   onShownNoteChange: (newIndex: Int) -> Unit
 ) {
   Box(
-    modifier = Modifier.Companion
-      .align(Alignment.Companion.Center)
+    modifier = Modifier
+      .align(Alignment.Center)
       .size(
         width = imageSize.width.pxToDp(),
         height = imageSize.height.pxToDp(),
@@ -57,7 +57,7 @@ fun BoxScope.RenderNotes(
       val heightPx = imageSize.height * (note.height.toFloat() / bqImage.height.toFloat())
 
       Box(
-        modifier = Modifier.Companion
+        modifier = Modifier
           .zIndex(1f)
           .size(
             width = widthPx.pxToDp(),
@@ -80,7 +80,7 @@ fun BoxScope.RenderNotes(
           .background(MaterialTheme.colorScheme.primary.copy(0.4f))
       ) {}
       if (shownNote == index) {
-        var size by remember { mutableStateOf(IntSize.Companion.Zero) }
+        var size by remember { mutableStateOf(IntSize.Zero) }
         val offsetX by remember {
           derivedStateOf {
             if (xOffsetPx > imageSize.width / 2) {
@@ -100,7 +100,7 @@ fun BoxScope.RenderNotes(
           }
         }
         Box(
-          modifier = Modifier.Companion
+          modifier = Modifier
             .zIndex(2f)
             .onPlaced { size = it.size }
             .absoluteOffset(
@@ -109,8 +109,8 @@ fun BoxScope.RenderNotes(
             )
             .widthIn(max = (imageSize.width / 2).pxToDp())
             .conditional(
-              size == IntSize.Companion.Zero,
-              Modifier.Companion.alpha(0f)
+              size == IntSize.Zero,
+              Modifier.alpha(0f)
             )
             .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
