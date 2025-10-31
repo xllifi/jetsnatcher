@@ -1,11 +1,9 @@
 package ru.xllifi.jetsnatcher
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
@@ -14,7 +12,9 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
-import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import coil3.network.DeDupeInFlightRequestStrategy
+import coil3.network.NetworkFetcher
+import coil3.network.okhttp.asNetworkClient
 import com.jobinlawrance.downloadprogressinterceptor.DownloadProgressInterceptor
 import com.jobinlawrance.downloadprogressinterceptor.ProgressEventBus
 import okhttp3.OkHttpClient
@@ -119,7 +119,6 @@ val samplePosts = listOf(
 
 val progressEventBus: ProgressEventBus = ProgressEventBus()
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -140,12 +139,13 @@ class MainActivity : ComponentActivity() {
           }
           .components {
             add(
-              OkHttpNetworkFetcherFactory(
-                callFactory = {
+              NetworkFetcher.Factory(
+                networkClient = {
                   OkHttpClient.Builder()
                     .addNetworkInterceptor(DownloadProgressInterceptor(progressEventBus))
-                    .build()
-                }
+                    .build().asNetworkClient()
+                },
+                inFlightRequestStrategy = { DeDupeInFlightRequestStrategy() },
               )
             )
           }
