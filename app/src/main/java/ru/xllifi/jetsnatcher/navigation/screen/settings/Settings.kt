@@ -57,7 +57,7 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
           ConfirmDialogNavKey(
             title = "Delete ${provider.name}?",
             description = "This action cannot be undone.",
-          ) { onCancel ->
+          ) { onDismiss ->
             Button(
               onClick = {
                 backStack.removeAll {
@@ -75,13 +75,13 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
                 if (backStack.first() !is BrowserNavKey) {
                   backStack.add(0, BrowserNavKey(null, emptyList()))
                 }
-                backStack.removeAt(backStack.lastIndex)
+                onDismiss()
               }
             ) {
               Text("Yes, delete")
             }
             Button(
-              onClick = onCancel
+              onClick = onDismiss
             ) {
               Text("No, cancel")
             }

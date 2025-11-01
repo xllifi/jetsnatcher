@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ru.xllifi.jetsnatcher.extensions.FullPreview
@@ -28,7 +27,7 @@ import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 data class ConfirmDialogNavKey(
   val title: String,
   val description: String,
-  val buttons: @Composable RowScope.(onCancel: () -> Unit) -> Unit,
+  val buttons: @Composable RowScope.(onDismiss: () -> Unit) -> Unit,
 ) : NavKey
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -36,8 +35,8 @@ data class ConfirmDialogNavKey(
 fun ConfirmDialog(
   title: String,
   description: String,
-  onCancel: () -> Unit,
-  buttons: @Composable RowScope.(onCancel: () -> Unit) -> Unit,
+  onDismiss: () -> Unit,
+  buttons: @Composable RowScope.(onDismiss: () -> Unit) -> Unit,
 ) {
   Column(
     modifier = Modifier
@@ -68,7 +67,7 @@ fun ConfirmDialog(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
     ) {
-      buttons(onCancel)
+      buttons(onDismiss)
     }
   }
 }
@@ -80,15 +79,15 @@ fun ConfirmDialogPreview() {
     ConfirmDialog(
       title = "Are you sure?",
       description = "Confirm deletion of...",
-      onCancel = {}
-    ) { onCancel ->
+      onDismiss = {}
+    ) { onDismiss ->
       Button(
         onClick = {}
       ) {
         Text("Confirm")
       }
       Button(
-        onClick = onCancel
+        onClick = onDismiss
       ) {
         Text("Cancel")
       }
