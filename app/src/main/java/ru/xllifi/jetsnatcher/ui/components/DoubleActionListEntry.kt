@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.xllifi.jetsnatcher.extensions.FullPreview
+import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -35,10 +36,10 @@ import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 fun DoubleActionListEntry(
   title: String,
   description: String,
-  primaryActionIcon: ImageVector,
-  secondaryActionIcon: ImageVector,
-  onPrimaryAction: () -> Unit,
-  onSecondaryAction: () -> Unit,
+  primaryActionIcon: ImageVector?,
+  secondaryActionIcon: ImageVector?,
+  onPrimaryAction: (() -> Unit)?,
+  onSecondaryAction: (() -> Unit)?,
 ) {
   Row(
     modifier = Modifier
@@ -58,17 +59,22 @@ fun DoubleActionListEntry(
           )
         )
         .background(MaterialTheme.colorScheme.surfaceContainer)
-        .clickable { onPrimaryAction() }
+        .conditional(
+          condition = onPrimaryAction != null,
+          ifTrue = Modifier.clickable { onPrimaryAction!!() }
+        )
         .padding(horizontal = 12.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      Icon(
-        imageVector = primaryActionIcon,
-        contentDescription = null,
-        tint = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.size(28.dp),
-      )
+      if (primaryActionIcon != null) {
+        Icon(
+          imageVector = primaryActionIcon,
+          contentDescription = null,
+          tint = MaterialTheme.colorScheme.primary,
+          modifier = Modifier.size(28.dp),
+        )
+      }
       Column {
         Text(
           text = title,
@@ -82,28 +88,28 @@ fun DoubleActionListEntry(
         )
       }
     }
-    Box(
-      modifier = Modifier
-        .fillMaxHeight()
-        .clip(
-          MaterialTheme.shapes.medium.copy(
-            bottomStart = CornerSize(4.dp),
-            topStart = CornerSize(4.dp),
+    if (onSecondaryAction != null && secondaryActionIcon != null) {
+      Box(
+        modifier = Modifier
+          .fillMaxHeight()
+          .clip(
+            MaterialTheme.shapes.medium.copy(
+              bottomStart = CornerSize(4.dp),
+              topStart = CornerSize(4.dp),
+            )
           )
+          .background(MaterialTheme.colorScheme.surfaceContainer)
+          .clickable { onSecondaryAction() }
+          .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+      ) {
+        Icon(
+          imageVector = secondaryActionIcon,
+          contentDescription = null,
+          tint = MaterialTheme.colorScheme.primary,
+          modifier = Modifier.size(28.dp),
         )
-        .background(MaterialTheme.colorScheme.surfaceContainer)
-        .clickable {
-          onSecondaryAction()
-        }
-        .padding(horizontal = 12.dp),
-      contentAlignment = Alignment.Center,
-    ) {
-      Icon(
-        imageVector = secondaryActionIcon,
-        contentDescription = null,
-        tint = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.size(28.dp),
-      )
+      }
     }
   }
 }
