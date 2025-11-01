@@ -18,13 +18,13 @@ Written with Jetpack Compose. Trying to follow Material 3 design.
 - Tag-based search with tag autocomplete
 - [Gelbooru](https://gelbooru.com) and [Rule34.xxx](https://rule34.xxx) providers
 - Search history
+- Blacklisted tags
+- Favorite searches
 
 **Planned**
 
-- Blacklisted tags
-- Favorite searches
-- More providers
 - Videos
 - Offline collections
+- More providers
 - Download posts
 - Better readme
