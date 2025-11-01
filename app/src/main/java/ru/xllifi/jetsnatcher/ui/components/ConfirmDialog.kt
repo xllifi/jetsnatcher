@@ -28,7 +28,7 @@ import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 data class ConfirmDialogNavKey(
   val title: String,
   val description: String,
-  val buttons: @Composable RowScope.() -> Unit,
+  val buttons: @Composable RowScope.(onCancel: () -> Unit) -> Unit,
 ) : NavKey
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -36,7 +36,8 @@ data class ConfirmDialogNavKey(
 fun ConfirmDialog(
   title: String,
   description: String,
-  buttons: @Composable RowScope.() -> Unit,
+  onCancel: () -> Unit,
+  buttons: @Composable RowScope.(onCancel: () -> Unit) -> Unit,
 ) {
   Column(
     modifier = Modifier
@@ -67,7 +68,7 @@ fun ConfirmDialog(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
     ) {
-      buttons()
+      buttons(onCancel)
     }
   }
 }
@@ -79,14 +80,15 @@ fun ConfirmDialogPreview() {
     ConfirmDialog(
       title = "Are you sure?",
       description = "Confirm deletion of...",
-    ) {
+      onCancel = {}
+    ) { onCancel ->
       Button(
         onClick = {}
       ) {
         Text("Confirm")
       }
       Button(
-        onClick = {}
+        onClick = onCancel
       ) {
         Text("Cancel")
       }

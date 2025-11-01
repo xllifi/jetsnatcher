@@ -57,36 +57,35 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
           ConfirmDialogNavKey(
             title = "Delete ${provider.name}?",
             description = "This action cannot be undone.",
-            buttons = {
-              Button(
-                onClick = {
-                  backStack.removeAll {
-                    it is BrowserNavKey && it.providerProto == provider
-                  }
-                  GlobalScope.launch {
-                    settingsDataStore.updateData { settings ->
-                      val providers = settings.providers.toMutableList()
-                      providers.removeAt(index)
-                      settings.copy(
-                        providers = providers
-                      )
-                    }
-                  }
-                  if (backStack.first() !is BrowserNavKey) {
-                    backStack.add(0, BrowserNavKey(null, emptyList()))
-                  }
-                  backStack.removeAt(backStack.lastIndex)
+          ) { onCancel ->
+            Button(
+              onClick = {
+                backStack.removeAll {
+                  it is BrowserNavKey && it.providerProto == provider
                 }
-              ) {
-                Text("Yes, delete")
+                GlobalScope.launch {
+                  settingsDataStore.updateData { settings ->
+                    val providers = settings.providers.toMutableList()
+                    providers.removeAt(index)
+                    settings.copy(
+                      providers = providers
+                    )
+                  }
+                }
+                if (backStack.first() !is BrowserNavKey) {
+                  backStack.add(0, BrowserNavKey(null, emptyList()))
+                }
+                backStack.removeAt(backStack.lastIndex)
               }
-              Button(
-                onClick = { backStack.removeAt(backStack.lastIndex) }
-              ) {
-                Text("No, cancel")
-              }
+            ) {
+              Text("Yes, delete")
             }
-          ))
+            Button(
+              onClick = onCancel
+            ) {
+              Text("No, cancel")
+            }
+          })
       },
     )
   }

@@ -313,6 +313,9 @@ fun NavRoot(
             title = key.title,
             description = key.description,
             buttons = key.buttons,
+            onCancel = {
+              backStack.removeAt(backStack.lastIndex)
+            }
           )
         }
         entry<TextFieldDialogNavKey>(
