@@ -1,6 +1,5 @@
 package ru.xllifi.jetsnatcher.navigation.screen.main.search
 
-import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -85,8 +84,8 @@ import kotlinx.coroutines.runBlocking
 import ru.xllifi.booru_api.Tag
 import ru.xllifi.booru_api.TagCategory
 import ru.xllifi.jetsnatcher.extensions.FullPreview
-import ru.xllifi.jetsnatcher.extensions.dpToPx
 import ru.xllifi.jetsnatcher.extensions.isImeHalfVisible
+import ru.xllifi.jetsnatcher.extensions.timestampToRelativeTimeSpan
 import ru.xllifi.jetsnatcher.extensions.toReal
 import ru.xllifi.jetsnatcher.proto.history.HistoryEntryProto
 import ru.xllifi.jetsnatcher.proto.historyDataStore
@@ -94,16 +93,6 @@ import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.ui.components.Tag
 import ru.xllifi.jetsnatcher.ui.components.TextField
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
-import kotlin.collections.addAll
-
-fun timestampToRelativeTimeSpan(timestamp: Long): String {
-  return DateUtils.getRelativeTimeSpanString(
-    timestamp,
-    System.currentTimeMillis(),
-    DateUtils.MINUTE_IN_MILLIS,
-    DateUtils.FORMAT_ABBREV_RELATIVE
-  ).toString()
-}
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
