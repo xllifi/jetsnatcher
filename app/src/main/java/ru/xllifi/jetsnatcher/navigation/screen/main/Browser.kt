@@ -15,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -150,9 +151,9 @@ fun Browser(
           onEditProviderClick = {
             topBackStack.add(
               ProviderEditDialogNavKey(
-              provider = providerProto,
-              index = providers.indexOf(providerProto),
-              providerType = providerProto.providerType
+                provider = providerProto,
+                index = providers.indexOf(providerProto),
+                providerType = providerProto.providerType
               )
             )
           }
@@ -167,9 +168,9 @@ fun Browser(
             entries.removeAll { it.tags == tags }
             entries.add(
               HistoryEntryProto(
-              createdAt = System.currentTimeMillis(),
-              tags = tags,
-              isFavorite = isFavorite,
+                createdAt = System.currentTimeMillis(),
+                tags = tags,
+                isFavorite = isFavorite,
               )
             )
             history.copy(
@@ -215,6 +216,13 @@ fun Main(
   onEditProviderClick: () -> Unit,
 ) {
   val uiState by viewModel.uiState.collectAsState()
+  LaunchedEffect(uiState.selectedPostIndex) {
+    if (uiState.expandPost && uiState.selectedPostIndex > uiState.posts.lastIndex - 4) {
+      GlobalScope.launch {
+        viewModel.loadPosts()
+      }
+    }
+  }
   SharedTransitionLayout {
     Column {
       PostGrid(
