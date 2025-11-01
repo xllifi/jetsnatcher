@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,17 +40,23 @@ import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.HighQuality
 import androidx.compose.material.icons.outlined.ThumbUp
 import androidx.compose.material3.Button
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -83,6 +90,7 @@ import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.extensions.plus
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserViewModel
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
+import ru.xllifi.jetsnatcher.ui.components.LoadingIndicator
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 import ru.xllifi.jetsnatcher.ui.theme.sizes
 
@@ -107,102 +115,76 @@ fun SharedTransitionScope.PostGrid(
     index = uiState.selectedPostIndex,
     postExpanded = uiState.expandPost,
   )
-  val showPostInfo by LocalContext.current.settingsDataStore.data.map { it.showCardInfo }.collectAsState(true)
-  LazyVerticalStaggeredGrid(
-    state = gridState,
+  val showPostInfo by LocalContext.current.settingsDataStore.data.map { it.showCardInfo }
+    .collectAsState(true)
+  val pullToRefreshState = rememberPullToRefreshState()
+  PullToRefreshBox(
     modifier = modifier,
-    columns = StaggeredGridCells.Adaptive(100.dp),
-    verticalItemSpacing = 8.dp,
-    horizontalArrangement = Arrangement.spacedBy(8.dp),
-    contentPadding = PaddingValues(8.dp) + innerPadding,
-  ) {
-    itemsIndexed(uiState.posts) { index, post ->
-      val scope = rememberCoroutineScope()
-      Card(
+    isRefreshing = uiState.isLoadingNewPosts,
+    onRefresh = {
+      GlobalScope.launch {
+        viewModel.refresh()
+      }
+    },
+    state = pullToRefreshState,
+    indicator = {
+      LoadingIndicator(
         modifier = Modifier
-          .clip(RoundedCornerShape(MaterialTheme.sizes.roundingMedium))
-          .clickable(!this@PostGrid.isTransitionActive) {
-            viewModel.selectPost(index)
-            scope.launch {
-              awaitFrame()
-              viewModel.expandPost(to = true)
-            }
-          },
-        post = post,
-        isVisible = !(uiState.expandPost && index == uiState.selectedPostIndex),
-        isSelected = index == uiState.selectedPostIndex,
-        showPostInfo = showPostInfo,
+          .align(Alignment.TopCenter),
+        state = pullToRefreshState,
+        isRefreshing = uiState.isLoadingNewPosts,
+        minDistance = innerPadding.calculateTopPadding(),
       )
-    }
-    item(
-      span = StaggeredGridItemSpan.FullLine
-    ) {
-      Box(
-        modifier = Modifier
-          .fillMaxSize()
-          .padding(top = 24.dp, bottom = 64.dp),
-        contentAlignment = Alignment.TopCenter,
+    },
+  ) {
+    LazyVerticalStaggeredGrid(
+      state = gridState,
+      columns = StaggeredGridCells.Adaptive(100.dp),
+      verticalItemSpacing = 8.dp,
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      contentPadding = PaddingValues(8.dp) + innerPadding,
+    )
+    {
+      itemsIndexed(uiState.posts) { index, post ->
+        val scope = rememberCoroutineScope()
+        Card(
+          modifier = Modifier
+            .clip(RoundedCornerShape(MaterialTheme.sizes.roundingMedium))
+            .clickable(!this@PostGrid.isTransitionActive) {
+              viewModel.selectPost(index)
+              scope.launch {
+                awaitFrame()
+                viewModel.expandPost(to = true)
+              }
+            },
+          post = post,
+          isVisible = !(uiState.expandPost && index == uiState.selectedPostIndex),
+          isSelected = index == uiState.selectedPostIndex,
+          showPostInfo = showPostInfo,
+        )
+      }
+      item(
+        span = StaggeredGridItemSpan.FullLine
       ) {
-        AnimatedVisibility(
-          visible = uiState.isLoadingNewPosts,
-          enter = scaleIn() + fadeIn(),
-          exit = scaleOut() + fadeOut(),
+        Box(
+          modifier = Modifier
+            .fillMaxSize()
+            .padding(top = 24.dp, bottom = 64.dp),
+          contentAlignment = Alignment.TopCenter,
         ) {
-          LoadingIndicator()
-        }
-        AnimatedVisibility(
-          visible = uiState.noMorePosts,
-          enter = scaleIn() + fadeIn(),
-          exit = scaleOut() + fadeOut(),
-        ) {
-          Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-              .clip(MaterialTheme.shapes.medium)
-              .background(MaterialTheme.colorScheme.surfaceContainer)
-              .padding(16.dp),
+          AnimatedVisibility(
+            visible = uiState.noMorePosts,
+            enter = scaleIn() + fadeIn(),
+            exit = scaleOut() + fadeOut(),
           ) {
-            Text("No more posts!")
-            Button(
-              onClick = {
-                GlobalScope.launch {
-                  viewModel.loadPosts()
-                }
-              }
+            Column(
+              horizontalAlignment = Alignment.CenterHorizontally,
+              modifier = Modifier
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .padding(16.dp),
             ) {
-              Text("Retry")
-            }
-          }
-        }
-        AnimatedVisibility(
-          visible = uiState.loadPostsError != null,
-          enter = scaleIn() + fadeIn(),
-          exit = scaleOut() + fadeOut(),
-        ) {
-          Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-              .clip(MaterialTheme.shapes.medium)
-              .background(MaterialTheme.colorScheme.errorContainer)
-              .padding(16.dp),
-          ) {
-            Text(
-              text = if (uiState.loadPostsError is UnauthorizedException) {
-                "${viewModel.provider.type.getFormattedName()} responded 401 Unauthorized. Check the API key assigned to this provider."
-              } else {
-                uiState.loadPostsError.toString()
-              }
-            )
-            Row(
-              horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-              if (uiState.loadPostsError is UnauthorizedException) {
-                Button(
-                  onClick = onEditProviderClick
-                ) {
-                  Text("Edit provider") // TODO: translate
-                }
-              }
+              Text("No more posts!")
               Button(
                 onClick = { onLoadPostsRequest(true) }
               ) {
@@ -210,10 +192,46 @@ fun SharedTransitionScope.PostGrid(
               }
             }
           }
+          AnimatedVisibility(
+            visible = uiState.loadPostsError != null,
+            enter = scaleIn() + fadeIn(),
+            exit = scaleOut() + fadeOut(),
+          ) {
+            Column(
+              horizontalAlignment = Alignment.CenterHorizontally,
+              modifier = Modifier
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.errorContainer)
+                .padding(16.dp),
+            ) {
+              Text(
+                text = if (uiState.loadPostsError is UnauthorizedException) {
+                  "${viewModel.provider.type.getFormattedName()} responded 401 Unauthorized. Check the API key assigned to this provider."
+                } else {
+                  uiState.loadPostsError.toString()
+                }
+              )
+              Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+              ) {
+                if (uiState.loadPostsError is UnauthorizedException) {
+                  Button(
+                    onClick = onEditProviderClick
+                  ) {
+                    Text("Edit provider") // TODO: translate
+                  }
+                }
+                Button(
+                  onClick = { onLoadPostsRequest(true) }
+                ) {
+                  Text("Retry")
+                }
+              }
+            }
+          }
         }
       }
     }
-
   }
 }
 
@@ -274,8 +292,7 @@ private fun SharedTransitionScope.Card(
         AsyncImage(
           modifier = Modifier
             .aspectRatio(img.width.toFloat() / img.height)
-            .fillMaxSize()
-          ,
+            .fillMaxSize(),
           imageLoader = SingletonImageLoader.get(LocalContext.current),
           model = ImageRequest.Builder(LocalContext.current)
             .data(img.url)
@@ -335,8 +352,7 @@ fun AnimatedVisibilityScope.PreviewInfo(
       )
       .fillMaxWidth()
       .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-      .padding(vertical = 4.dp, horizontal = 8.dp)
-    ,
+      .padding(vertical = 4.dp, horizontal = 8.dp),
     horizontalArrangement = Arrangement.spacedBy(4.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
@@ -350,8 +366,7 @@ fun AnimatedVisibilityScope.PreviewInfo(
         tint = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier
           .height(16.dp)
-          .padding(vertical = 2.dp)
-        ,
+          .padding(vertical = 2.dp),
       )
       Text(
         text = "$score",
@@ -365,6 +380,7 @@ fun AnimatedVisibilityScope.PreviewInfo(
     badges()
   }
 }
+
 @Composable
 fun BadgeIcon(
   imageVector: ImageVector

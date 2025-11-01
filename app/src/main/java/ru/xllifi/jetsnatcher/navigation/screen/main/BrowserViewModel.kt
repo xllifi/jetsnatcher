@@ -7,14 +7,10 @@ import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.runBlocking
 import ru.xllifi.booru_api.Post
 import ru.xllifi.booru_api.Tag
 import ru.xllifi.jetsnatcher.extensions.toReal
-import ru.xllifi.jetsnatcher.proto.historyDataStore
 import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 
@@ -66,6 +62,13 @@ class BrowserViewModel(
         expandPost = to
       )
     }
+  }
+
+  suspend fun refresh() {
+    _uiState.update {
+      BrowserUiState()
+    }
+    loadPosts()
   }
 
   suspend fun loadPosts(evenIfNoMore: Boolean = false) {
