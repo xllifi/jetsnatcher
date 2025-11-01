@@ -313,7 +313,7 @@ fun NavRoot(
             title = key.title,
             description = key.description,
             buttons = key.buttons,
-            onCancel = {
+            onDismiss = {
               backStack.removeAt(backStack.lastIndex)
             }
           )
