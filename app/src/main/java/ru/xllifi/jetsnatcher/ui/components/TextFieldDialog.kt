@@ -31,7 +31,7 @@ data class TextFieldDialogNavKey(
   val description: String?,
   val initValue: String,
   val onDone: (String) -> Unit,
-  val acceptableCharactersRegex: String?,
+  val acceptableCharactersRegex: String? = null,
 ) : NavKey
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
