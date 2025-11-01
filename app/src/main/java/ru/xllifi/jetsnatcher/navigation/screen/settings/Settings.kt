@@ -2,118 +2,94 @@
 
 package ru.xllifi.jetsnatcher.navigation.screen.settings
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import ru.xllifi.jetsnatcher.proto.SettingsSerializer
+import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserNavKey
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
-import ru.xllifi.jetsnatcher.ui.components.SettingSlider
-import ru.xllifi.jetsnatcher.ui.components.SettingSwitch
-import ru.xllifi.jetsnatcher.ui.components.SettingTravel
-import ru.xllifi.jetsnatcher.ui.components.TextFieldDialogNavKey
+import ru.xllifi.jetsnatcher.ui.components.ConfirmDialogNavKey
 
-@Serializable
-object SettingsNavKey : NavKey
+object SettingsNavigation {
+  interface SettingsNavKey : NavKey
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun Settings(
+  @Serializable
+  object General : SettingsNavKey
+
+  @Serializable
+  object Providers : SettingsNavKey
+
+  @Serializable
+  object Blacklist : SettingsNavKey
+}
+
+fun EntryProviderScope<NavKey>.settingsNavigation(
   innerPadding: PaddingValues,
-  onManageProviders: () -> Unit,
-  topBackStack: NavBackStack<NavKey>,
+  backStack: NavBackStack<NavKey>,
 ) {
-  val settingsDataStore = LocalContext.current.settingsDataStore
-  val settingsState by settingsDataStore.data.collectAsState(SettingsSerializer.defaultValue)
-
-  Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(innerPadding)
-      .padding(16.dp),
-    verticalArrangement = Arrangement.spacedBy(8.dp)
-  ) {
-    Text(
-      modifier = Modifier
-        .fillMaxWidth()
-        .padding(bottom = 16.dp),
-      text = "Settings",
-      style = MaterialTheme.typography.titleLargeEmphasized,
-      textAlign = TextAlign.Center,
-    )
-    val scope = rememberCoroutineScope()
-    SettingSlider(
-      "Page size", // TODO: translate
-      "How many posts to request each time a request is sent", // TODO: translate
-      value = settingsState.pageSize.toFloat(),
-      onValueChange = { value ->
-        scope.launch {
-          settingsDataStore.updateData {
-            it.copy(
-              pageSize = value.toUInt()
-            )
-          }
-        }
+  entry<SettingsNavigation.General> {
+    GeneralSettingsPage(
+      innerPadding = innerPadding,
+      onManageProviders = {
+        backStack.add(SettingsNavigation.Providers)
       },
-      valueRange = 10f..100f,
-      steps = 8,
-      showDecimal = false,
-      topBackStack = topBackStack,
-    )
-    SettingSlider(
-      "Double tap threshold", // TODO: translate
-      "How fast you should double-tap the screen for it to register as double tap", // TODO: translate
-      value = settingsState.doubleTapThreshold.toFloat(),
-      onValueChange = { value ->
-        scope.launch {
-          settingsDataStore.updateData {
-            it.copy(
-              doubleTapThreshold = value.toUInt()
-            )
-          }
-        }
+      onInputDialog = { navKey ->
+        backStack.add(navKey)
       },
-      valueRange = 100f..500f,
-      steps = 7,
-      showDecimal = false,
-      topBackStack = topBackStack,
-    )
-    SettingSwitch(
-      title = "Show post info in grid view", // TODO: translate
-      description = "Whether to show some general post info below each card in post view", // TODO: translate
-      checked = settingsState.showCardInfo,
-      onCheckedChange = { value ->
-        scope.launch {
-          settingsDataStore.updateData {
-            it.copy(
-              showCardInfo = value
-            )
-          }
-        }
-      }
-    )
-    SettingTravel(
-      title = "Manage providers", // TODO: translate
-      description = "Open the provider list to edit and delete providers", // TODO: translate
-      onClick = onManageProviders
     )
   }
+  entry<SettingsNavigation.Providers> {
+    val settingsDataStore = LocalContext.current.settingsDataStore
+    ProvidersSettingsPage(
+      innerPadding = innerPadding,
+      onEditProvider = { navKey ->
+        backStack.add(navKey)
+      },
+      onDeleteProvider = { provider, index ->
+        backStack.add(
+          ConfirmDialogNavKey(
+            title = "Delete ${provider.name}?",
+            description = "This action cannot be undone.",
+            buttons = {
+              Button(
+                onClick = {
+                  backStack.removeAll {
+                    it is BrowserNavKey && it.providerProto == provider
+                  }
+                  GlobalScope.launch {
+                    settingsDataStore.updateData { settings ->
+                      val providers = settings.providers.toMutableList()
+                      providers.removeAt(index)
+                      settings.copy(
+                        providers = providers
+                      )
+                    }
+                  }
+                  if (backStack.first() !is BrowserNavKey) {
+                    backStack.add(0, BrowserNavKey(null, emptyList()))
+                  }
+                  backStack.removeAt(backStack.lastIndex)
+                }
+              ) {
+                Text("Yes, delete")
+              }
+              Button(
+                onClick = { backStack.removeAt(backStack.lastIndex) }
+              ) {
+                Text("No, cancel")
+              }
+            }
+          ))
+      },
+    )
+  }
+  entry<SettingsNavigation.Blacklist> { TODO() }
 }
+

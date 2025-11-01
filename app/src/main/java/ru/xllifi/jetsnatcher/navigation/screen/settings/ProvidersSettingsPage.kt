@@ -13,14 +13,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation3.runtime.NavKey
-import kotlinx.serialization.Serializable
 import ru.xllifi.booru_api.ProviderType
 import ru.xllifi.jetsnatcher.extensions.FullPreviewSysUi
 import ru.xllifi.jetsnatcher.proto.SettingsSerializer
@@ -31,63 +26,58 @@ import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
 val defaultProviderType = ProviderType.Gelbooru
 
-@Serializable
-class ProviderListNavKey : NavKey
-
 @Composable
-fun ProviderList(
+fun ProvidersSettingsPage(
   innerPadding: PaddingValues,
-  onEditProvider: (
-    provider: ProviderProto?,
-    index: Int?,
-    providerType: ProviderType,
-  ) -> Unit,
+  onEditProvider: (navKey: ProviderEditDialogNavKey) -> Unit,
   onDeleteProvider: (
-      provider: ProviderProto,
-      index: Int,
+    provider: ProviderProto,
+    index: Int,
   ) -> Unit,
 ) {
   val settingsDataStore = LocalContext.current.settingsDataStore
   val settingsState by settingsDataStore.data.collectAsState(SettingsSerializer.defaultValue)
 
-  var provider: ProviderProto? by remember { mutableStateOf(null) }
-  var providerIndex: Int? by remember { mutableStateOf(null) }
-  var showProviderDeleteDialog by remember { mutableStateOf(false) }
   LazyColumn(
     modifier = Modifier
       .padding(16.dp),
     contentPadding = innerPadding,
     verticalArrangement = Arrangement.spacedBy(8.dp),
   ) {
-    // TODO: Move to FAB
+    // region TODO: Move to FAB
     item {
       Button(
         onClick = {
           onEditProvider(
-            null,
-            null,
-            defaultProviderType,
+            ProviderEditDialogNavKey(
+              provider = null,
+              index = null,
+              providerType = defaultProviderType
+            )
           )
         }
       ) {
         Text("New provider")
       }
     }
-    itemsIndexed(settingsState.providers) { index, providerFromList ->
+    // endregion
+    itemsIndexed(settingsState.providers) { index, provider ->
       DoubleActionListEntry(
-        title = "Edit ${providerFromList.name}",
-        description = providerFromList.routes.base,
+        title = "Edit ${provider.name}",
+        description = provider.routes.base,
         primaryActionIcon = Icons.Outlined.Edit,
         onPrimaryAction = {
           onEditProvider(
-            providerFromList,
-            index,
-            providerFromList.providerType,
+            ProviderEditDialogNavKey(
+              provider = provider,
+              index = index,
+              providerType = provider.providerType,
+            )
           )
         },
         secondaryActionIcon = Icons.Outlined.DeleteOutline,
         onSecondaryAction = {
-          onDeleteProvider(providerFromList, index)
+          onDeleteProvider(provider, index)
         },
       )
     }
@@ -96,8 +86,8 @@ fun ProviderList(
 
 @FullPreviewSysUi
 @Composable
-fun ProviderListPreview() {
+private fun ProvidersSettingsPagePreview() {
   JetSnatcherTheme {
-    ProviderList(PaddingValues(0.dp), { _, _, _ -> }, { _, _ -> })
+    ProvidersSettingsPage(PaddingValues(0.dp), { }, { _, _ -> })
   }
 }

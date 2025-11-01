@@ -30,8 +30,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
-import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.NavKey
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.extensions.numPlaces
@@ -40,6 +38,8 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.max
 
+typealias OnInputDialog = (navKey: TextFieldDialogNavKey) -> Unit
+val defaultOnInputDialog: OnInputDialog = { }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +51,7 @@ fun SettingSlider(
   valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
   @IntRange steps: Int = 0,
   showDecimal: Boolean = true,
-  topBackStack: NavBackStack<NavKey>?,
+  onInputDialog: OnInputDialog = defaultOnInputDialog,
 ) {
   Column(
     modifier = Modifier
@@ -98,9 +98,9 @@ fun SettingSlider(
           .widthIn(min = 24.dp)
           .width(16.dp + if (showDecimal) 16.dp else 0.dp + (max(valueRange.endInclusive.numPlaces(), value.numPlaces()) - 1) * 8.dp)
           .conditional(
-            topBackStack != null,
+            onInputDialog != defaultOnInputDialog,
             Modifier.clickable {
-              topBackStack!!.add(TextFieldDialogNavKey(
+              onInputDialog(TextFieldDialogNavKey(
                 title = title,
                 description = description,
                 initValue = value.toString(),
@@ -134,7 +134,6 @@ fun SettingSliderPreview() {
       valueRange = 1f..5f,
       steps = 3,
       showDecimal = false,
-      topBackStack = null,
     )
   }
 }

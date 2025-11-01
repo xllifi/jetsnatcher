@@ -67,13 +67,11 @@ import ru.xllifi.jetsnatcher.navigation.screen.main.Browser
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserNavKey
 import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderEditDialog
 import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderEditDialogNavKey
-import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderList
-import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderListNavKey
 import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderTypeDialog
 import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderTypeDialogNavKey
-import ru.xllifi.jetsnatcher.navigation.screen.settings.Settings
-import ru.xllifi.jetsnatcher.navigation.screen.settings.SettingsNavKey
+import ru.xllifi.jetsnatcher.navigation.screen.settings.SettingsNavigation
 import ru.xllifi.jetsnatcher.navigation.screen.settings.defaultProviderType
+import ru.xllifi.jetsnatcher.navigation.screen.settings.settingsNavigation
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.components.ConfirmDialog
 import ru.xllifi.jetsnatcher.ui.components.ConfirmDialogNavKey
@@ -227,10 +225,10 @@ fun NavRoot(
         NavigationDrawerItem(
           icon = { Icon(Icons.Outlined.Settings, null) },
           label = { Text(text = "Settings") },
-          selected = backStack.last()::class == SettingsNavKey::class,
+          selected = backStack.last() is SettingsNavigation.General,
           onClick = {
-            if (backStack.last()::class != SettingsNavKey::class) {
-              backStack.add(SettingsNavKey)
+            if (backStack.last() !is SettingsNavigation.General) {
+              backStack.add(SettingsNavigation.General)
               scope.launch {
                 drawerState.close()
               }
@@ -249,66 +247,16 @@ fun NavRoot(
       ),
       sceneStrategy = DialogSceneStrategy(),
       entryProvider = entryProvider {
+        settingsNavigation(
+          innerPadding = innerPadding,
+          backStack = backStack,
+        )
         entry<BrowserNavKey> { key ->
           Browser(
             providerProto = key.providerProto,
             searchTags = key.searchTags,
             topBackStack = backStack,
             innerPadding = innerPadding,
-          )
-        }
-        entry<SettingsNavKey> { key ->
-          Settings(
-            innerPadding = innerPadding,
-            onManageProviders = {
-              backStack.add(ProviderListNavKey())
-            },
-            topBackStack = backStack,
-          )
-        }
-        entry<ProviderListNavKey> { key ->
-          ProviderList(
-            innerPadding = innerPadding,
-            onEditProvider = { provider, index, providerType ->
-              backStack.add(ProviderEditDialogNavKey(provider, index, providerType))
-            },
-            onDeleteProvider = { provider, index ->
-              backStack.add(
-                ConfirmDialogNavKey(
-                title = "Delete ${provider.name}?",
-                description = "This action cannot be undone.",
-                buttons = {
-                  Button(
-                    onClick = {
-                      backStack.removeAll {
-                        it::class == BrowserNavKey::class
-                            && (it as BrowserNavKey).providerProto == provider
-                      }
-                      GlobalScope.launch {
-                        settingsDataStore.updateData { settings ->
-                          val providers = settings.providers.toMutableList()
-                          providers.removeAt(index)
-                          settings.copy(
-                            providers = providers
-                          )
-                        }
-                      }
-                      if (backStack.first() !is BrowserNavKey) {
-                        backStack.add(0, BrowserNavKey(null, emptyList()))
-                      }
-                      backStack.removeAt(backStack.lastIndex)
-                    }
-                  ) {
-                    Text("Yes, delete")
-                  }
-                  Button(
-                    onClick = { backStack.removeAt(backStack.lastIndex) }
-                  ) {
-                    Text("No, cancel")
-                  }
-                }
-              ))
-            },
           )
         }
         entry<ProviderEditDialogNavKey>(

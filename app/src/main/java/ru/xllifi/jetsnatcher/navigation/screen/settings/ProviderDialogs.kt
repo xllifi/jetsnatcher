@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,64 +49,9 @@ import ru.xllifi.booru_api.Routes
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
+import ru.xllifi.jetsnatcher.ui.components.TextField
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 import kotlin.text.ifEmpty
-
-@Composable
-private fun TextField(
-  value: String,
-  onValueChange: (newVal: String) -> Unit,
-  placeholder: String,
-  name: String,
-  onDone: (value: String) -> Unit,
-  icon: @Composable () -> Unit = {},
-) {
-  BasicTextField(
-    value = value.ifEmpty { placeholder },
-    onValueChange = { onValueChange(it) },
-    singleLine = true,
-    keyboardOptions = KeyboardOptions(
-      imeAction = ImeAction.Done,
-    ),
-    keyboardActions = KeyboardActions { onDone(value) },
-    textStyle = MaterialTheme.typography.bodyLarge.copy(
-      color = MaterialTheme.colorScheme.onSurface,
-      fontSize = 16.sp,
-      lineHeight = 16.sp,
-    ),
-    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-    decorationBox = { innerTextField ->
-      val labelSp = with(LocalDensity.current) {
-        12.dp.toSp()
-      }
-      Text(
-        text = name,
-        style = MaterialTheme.typography.labelMedium.copy(
-          color = MaterialTheme.colorScheme.onSurface.copy(0.4f),
-          fontSize = labelSp,
-          lineHeight = labelSp,
-        ),
-        modifier = Modifier
-          .zIndex(2f)
-          .offset(x = 12.dp, y = 2.dp),
-      )
-      Row(
-        modifier = Modifier
-          .fillMaxWidth()
-          .clip(MaterialTheme.shapes.small)
-          .background(MaterialTheme.colorScheme.surfaceContainer)
-          .height(48.dp)
-          .padding(top = 8.dp)
-          .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-      ) {
-        icon()
-        innerTextField()
-      }
-    }
-  )
-}
 
 @Serializable
 data class ProviderEditDialogNavKey(
@@ -127,13 +73,28 @@ fun ProviderEditDialog(
       provider?.toTemporary() ?: TemporaryProvider()
     )
   }
-  LaunchedEffect(provider) {
-    temporaryProvider = provider?.toTemporary() ?: TemporaryProvider()
-  }
-
   var providerDefaultRoutes by remember { mutableStateOf(providerType.getDefaultRoutes()) }
+  var previousProviderDefaultRoutes by remember { mutableStateOf(providerDefaultRoutes) }
+  var previousProviderType by remember { mutableStateOf(providerType) }
   LaunchedEffect(providerType) {
+    temporaryProvider = temporaryProvider.copy(
+      name = if (temporaryProvider.name.isNotEmpty() && temporaryProvider.name != previousProviderType.name) temporaryProvider.name else providerType.name
+    )
+    previousProviderType = providerType
     providerDefaultRoutes = providerType.getDefaultRoutes()
+  }
+  LaunchedEffect(providerDefaultRoutes) {
+    temporaryProvider = temporaryProvider.copy(
+      routesBase = if (temporaryProvider.routesBase.isNotEmpty() && temporaryProvider.routesBase != previousProviderDefaultRoutes.base) temporaryProvider.routesBase else providerDefaultRoutes.base,
+      routesPublicFacingPostPage = if (temporaryProvider.routesPublicFacingPostPage.isNotEmpty() && temporaryProvider.routesPublicFacingPostPage != previousProviderDefaultRoutes.publicFacingPostPage) temporaryProvider.routesPublicFacingPostPage else providerDefaultRoutes.publicFacingPostPage,
+      routesAutocomplete = if (temporaryProvider.routesAutocomplete.isNotEmpty() && temporaryProvider.routesAutocomplete != previousProviderDefaultRoutes.autocomplete) temporaryProvider.routesAutocomplete else providerDefaultRoutes.autocomplete,
+      routesPosts = if (temporaryProvider.routesPosts.isNotEmpty() && temporaryProvider.routesPosts != previousProviderDefaultRoutes.posts) temporaryProvider.routesPosts else providerDefaultRoutes.posts,
+      routesTags = if (temporaryProvider.routesTags.isNotEmpty() && temporaryProvider.routesTags != previousProviderDefaultRoutes.tags) temporaryProvider.routesTags else providerDefaultRoutes.tags,
+      routesComments = if (temporaryProvider.routesComments.isNotEmpty() && temporaryProvider.routesComments != previousProviderDefaultRoutes.comments) temporaryProvider.routesComments else providerDefaultRoutes.comments,
+      routesNotes = if (temporaryProvider.routesNotes.isNotEmpty() && temporaryProvider.routesNotes != previousProviderDefaultRoutes.notes) temporaryProvider.routesNotes else providerDefaultRoutes.notes,
+      routesAuth = if (temporaryProvider.routesAuth.isNotEmpty() && temporaryProvider.routesAuth != previousProviderDefaultRoutes.authSuffix) temporaryProvider.routesAuth else providerDefaultRoutes.authSuffix ?: "",
+    )
+    previousProviderDefaultRoutes = providerDefaultRoutes
   }
 
   Column(
@@ -146,9 +107,9 @@ fun ProviderEditDialog(
     TextField(
       value = temporaryProvider.name,
       onValueChange = { temporaryProvider = temporaryProvider.copy(name = it) },
-      name = "Name",
-      placeholder = providerType.name,
-      onDone = { temporaryProvider = temporaryProvider.copy(name = it) },
+      onKeyboardDone = { temporaryProvider = temporaryProvider.copy(name = it) },
+      label = "Name",
+      singleLine = true,
     )
     Box(
       modifier = Modifier
@@ -172,51 +133,51 @@ fun ProviderEditDialog(
     TextField(
       value = temporaryProvider.routesBase,
       onValueChange = { temporaryProvider = temporaryProvider.copy(routesBase = it) },
-      name = "Base URL",
-      placeholder = providerDefaultRoutes.base,
-      onDone = { temporaryProvider = temporaryProvider.copy(routesBase = it) },
+      onKeyboardDone = { temporaryProvider = temporaryProvider.copy(routesBase = it) },
+      label = "Base URL",
+      singleLine = true,
     )
     TextField(
       value = temporaryProvider.routesAutocomplete,
       onValueChange = { temporaryProvider = temporaryProvider.copy(routesAutocomplete = it) },
-      name = "Autocomplete route",
-      placeholder = providerDefaultRoutes.autocomplete,
-      onDone = { temporaryProvider = temporaryProvider.copy(routesAutocomplete = it) },
+      onKeyboardDone = { temporaryProvider = temporaryProvider.copy(routesAutocomplete = it) },
+      label = "Autocomplete route",
+      singleLine = true,
     )
     TextField(
       value = temporaryProvider.routesPosts,
       onValueChange = { temporaryProvider = temporaryProvider.copy(routesPosts = it) },
-      name = "Posts route",
-      placeholder = providerDefaultRoutes.posts,
-      onDone = { temporaryProvider = temporaryProvider.copy(routesPosts = it) },
+      onKeyboardDone = { temporaryProvider = temporaryProvider.copy(routesPosts = it) },
+      label = "Posts route",
+      singleLine = true,
     )
     TextField(
       value = temporaryProvider.routesTags,
       onValueChange = { temporaryProvider = temporaryProvider.copy(routesTags = it) },
-      name = "Tags route",
-      placeholder = providerDefaultRoutes.tags,
-      onDone = { temporaryProvider = temporaryProvider.copy(routesTags = it) },
+      onKeyboardDone = { temporaryProvider = temporaryProvider.copy(routesTags = it) },
+      label = "Tags route",
+      singleLine = true,
     )
     TextField(
       value = temporaryProvider.routesComments,
       onValueChange = { temporaryProvider = temporaryProvider.copy(routesComments = it) },
-      name = "Comments route",
-      placeholder = providerDefaultRoutes.comments,
-      onDone = { temporaryProvider = temporaryProvider.copy(routesComments = it) },
+      onKeyboardDone = { temporaryProvider = temporaryProvider.copy(routesComments = it) },
+      label = "Comments route",
+      singleLine = true,
     )
     TextField(
       value = temporaryProvider.routesNotes,
       onValueChange = { temporaryProvider = temporaryProvider.copy(routesNotes = it) },
-      name = "Notes route",
-      placeholder = providerDefaultRoutes.notes,
-      onDone = { temporaryProvider = temporaryProvider.copy(routesNotes = it) },
+      onKeyboardDone = { temporaryProvider = temporaryProvider.copy(routesNotes = it) },
+      label = "Notes route",
+      singleLine = true,
     )
     TextField(
       value = temporaryProvider.routesAuth,
       onValueChange = { temporaryProvider = temporaryProvider.copy(routesAuth = it) },
-      name = "API key",
-      placeholder = "",
-      onDone = { temporaryProvider = temporaryProvider.copy(routesAuth = it) },
+      onKeyboardDone = { temporaryProvider = temporaryProvider.copy(routesAuth = it) },
+      label = "API key",
+      singleLine = true,
     )
     Button(
       onClick = {
