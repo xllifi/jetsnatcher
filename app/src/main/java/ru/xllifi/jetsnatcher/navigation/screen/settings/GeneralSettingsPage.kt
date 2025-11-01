@@ -30,6 +30,7 @@ import ru.xllifi.jetsnatcher.ui.components.SettingTravel
 fun GeneralSettingsPage(
   innerPadding: PaddingValues,
   onManageProviders: () -> Unit,
+  onManageBlacklist: () -> Unit,
   onInputDialog: OnInputDialog,
 ) {
   val settingsDataStore = LocalContext.current.settingsDataStore
@@ -105,6 +106,11 @@ fun GeneralSettingsPage(
       title = "Manage providers", // TODO: translate
       description = "Open the provider list to edit and delete providers", // TODO: translate
       onClick = onManageProviders
+    )
+    SettingTravel(
+      title = "Manage blacklisted tags", // TODO: translate
+      description = "Open the blacklisted tags list to add or remove tags", // TODO: translate
+      onClick = onManageBlacklist
     )
   }
 }

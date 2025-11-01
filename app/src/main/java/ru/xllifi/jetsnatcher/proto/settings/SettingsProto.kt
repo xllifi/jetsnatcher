@@ -11,5 +11,5 @@ data class SettingsProto(
   @ProtoNumber(2) val providers: List<ProviderProto> = emptyList(),
   @ProtoNumber(3) val doubleTapThreshold: UInt = 300u,
   @ProtoNumber(4) val showCardInfo: Boolean = true,
-  @ProtoNumber(5) val blacklistedTagValues: List<String> = emptyList(),
+  @ProtoNumber(5) val blacklistedTags: List<BlacklistedTagProto> = emptyList(),
 )

@@ -83,7 +83,7 @@ class BrowserViewModel(
     var error: Exception? = null
     val newPosts = try {
       provider.getPosts(
-        tags = searchTags.map { it.value } + settingsDataStore.data.first().blacklistedTagValues.map { "-$it" },
+        tags = searchTags.map { it.value } + settingsDataStore.data.first().blacklistedTags.map { "-${it.value}" },
         limit = settingsDataStore.data.first().pageSize.toInt(),
         page = _uiState.value.page,
       )

@@ -40,6 +40,9 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
       onManageProviders = {
         backStack.add(SettingsNavigation.Providers)
       },
+      onManageBlacklist = {
+        backStack.add(SettingsNavigation.Blacklist)
+      },
       onInputDialog = { navKey ->
         backStack.add(navKey)
       },
@@ -89,6 +92,12 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
       },
     )
   }
-  entry<SettingsNavigation.Blacklist> { TODO() }
+  entry<SettingsNavigation.Blacklist> {
+    BlacklistSettingsPage(
+      innerPadding = innerPadding,
+      onAddTag = { navKey -> backStack.add(navKey) },
+      onRemoveTag = { navKey -> backStack.add(navKey) },
+    )
+  }
 }
 

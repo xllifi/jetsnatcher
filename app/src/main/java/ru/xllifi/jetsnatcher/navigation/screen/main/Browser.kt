@@ -44,8 +44,10 @@ import ru.xllifi.jetsnatcher.navigation.screen.main.post_view.PostToolbarActions
 import ru.xllifi.jetsnatcher.navigation.screen.main.post_view.PostView
 import ru.xllifi.jetsnatcher.navigation.screen.main.search.Search
 import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderEditDialogNavKey
+import ru.xllifi.jetsnatcher.navigation.screen.settings.addBlacklistedTag
 import ru.xllifi.jetsnatcher.proto.history.HistoryEntryProto
 import ru.xllifi.jetsnatcher.proto.historyDataStore
+import ru.xllifi.jetsnatcher.proto.settings.BlacklistedTagProto
 import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 
@@ -146,11 +148,13 @@ fun Browser(
             localBackStack.add(BrowserNavigation.Search)
           },
           onEditProviderClick = {
-            topBackStack.add(ProviderEditDialogNavKey(
+            topBackStack.add(
+              ProviderEditDialogNavKey(
               provider = providerProto,
               index = providers.indexOf(providerProto),
               providerType = providerProto.providerType
-            ))
+              )
+            )
           }
         )
       }
@@ -161,11 +165,13 @@ fun Browser(
             val entries = history.entries.toMutableList()
             val isFavorite = entries.firstOrNull { it.tags == tags }?.isFavorite ?: false
             entries.removeAll { it.tags == tags }
-            entries.add(HistoryEntryProto(
+            entries.add(
+              HistoryEntryProto(
               createdAt = System.currentTimeMillis(),
               tags = tags,
               isFavorite = isFavorite,
-            ))
+              )
+            )
             history.copy(
               entries = entries
             )
@@ -191,13 +197,7 @@ fun Browser(
           onSelectedTagsAddToSearchClick = { tags -> newSearch(searchTags + tags) },
           onSelectedTagsNewSearchClick = { tags -> newSearch(tags) },
           onSelectedTagsAddToBlacklistClick = { tags ->
-            scope.launch {
-              context.settingsDataStore.updateData { settings ->
-                settings.copy(
-                  blacklistedTagValues = settings.blacklistedTagValues + tags.map { it.value }
-                )
-              }
-            }
+            addBlacklistedTag(context.settingsDataStore, *tags.map { it.value }.toTypedArray())
           },
         )
       }
