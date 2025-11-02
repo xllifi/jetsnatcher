@@ -97,9 +97,6 @@ fun BlacklistSettingsPage(
         Text("Add tag")
       }
     }
-    item {
-      Text(settingsState.blacklistedTags.toString())
-    }
     // endregion
     itemsIndexed(settingsState.blacklistedTags) { index, tag ->
       DoubleActionListEntry(
