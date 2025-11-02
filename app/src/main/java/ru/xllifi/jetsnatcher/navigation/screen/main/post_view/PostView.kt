@@ -100,20 +100,15 @@ fun SharedTransitionScope.PostView(
   // endregion
 
   // region resulting values
-  var alpha by remember { mutableFloatStateOf(1f) }
-  LaunchedEffect(predictiveBackProgress, dragToDismissProgress) {
-    alpha = (predictiveBackProgress * dragToDismissProgress) * 5 - 4
-  }
-
-  var scale by remember { mutableFloatStateOf(1f) }
-  LaunchedEffect(predictiveBackProgress, dragToDismissProgress) {
-    scale = (predictiveBackProgress * dragToDismissProgress) * 0.4f + 0.6f
-  }
-
-  var cornerSize by remember { mutableStateOf(0.dp) }
-  LaunchedEffect(predictiveBackProgress, dragToDismissProgress) {
-    cornerSize = ((1f - predictiveBackProgress * dragToDismissProgress) * 128).coerceAtMost(12f).dp
-  }
+  val alpha by remember { derivedStateOf {
+    (predictiveBackProgress * dragToDismissProgress) * 5 - 4
+  } }
+  val scale by remember { derivedStateOf {
+    (predictiveBackProgress * dragToDismissProgress) * 0.4f + 0.6f
+  } }
+  val cornerSize by remember { derivedStateOf {
+    ((1f - predictiveBackProgress * dragToDismissProgress) * 128).coerceAtMost(12f).dp
+  } }
   // endregion
 
   var pagerScrollEnabled by remember { mutableStateOf(false) }
