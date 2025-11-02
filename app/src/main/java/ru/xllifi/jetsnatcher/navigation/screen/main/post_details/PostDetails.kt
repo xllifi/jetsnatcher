@@ -46,7 +46,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,6 +63,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import ru.xllifi.booru_api.Tag
 import ru.xllifi.booru_api.TagCategory
@@ -80,7 +80,8 @@ val hostnameRegex = Regex("^(?:https?://)?(?:www\\.)?([^/]+)")
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PostDetails(
-  viewModel: BrowserViewModel,
+  postDetailsViewModel: PostDetailsViewModel = viewModel(),
+  browserViewModel: BrowserViewModel,
   postIndex: Int,
   innerPadding: PaddingValues,
 
@@ -107,12 +108,13 @@ fun PostDetails(
     )
   }
 
-  val uiState by viewModel.uiState.collectAsState()
-  val posts by remember { derivedStateOf { uiState.posts } }
+  val browserUiState by browserViewModel.uiState.collectAsState()
+  val posts by remember { derivedStateOf { browserUiState.posts } }
   val post by remember { derivedStateOf { posts[postIndex] } }
 
+  val postDetailsUiState by postDetailsViewModel.uiState.collectAsState()
+  val selectedTags = postDetailsUiState.selectedTags
   val scrollState = rememberScrollState()
-  val selectedTags = remember { mutableStateListOf<Tag>() }
   val layoutDirection = LocalLayoutDirection.current
   Column(
     modifier = Modifier
@@ -183,21 +185,20 @@ fun PostDetails(
                 )
                 .height(32.dp)
                 .clickable {
-                  if (selectedTags.contains(tag)) {
-                    selectedTags.remove(tag)
-                  } else {
-                    selectedTags.add(
-                      when (tag) {
-                        is String -> Tag(
-                          value = tag,
-                          label = tag.replace('_', ' '),
-                          postCount = 0,
-                          category = TagCategory.Unknown
-                        )
-                        is Tag -> tag
-                        else -> throw IllegalArgumentException("`tag` is neither `String` or `Tag`, but ${tag::javaClass.name}")
-                      }
+                  val tag = when (tag) {
+                    is String -> Tag(
+                      value = tag,
+                      label = tag.replace('_', ' '),
+                      postCount = 0,
+                      category = TagCategory.Unknown
                     )
+                    is Tag -> tag
+                    else -> throw IllegalArgumentException("`tag` is neither `String` or `Tag`, but ${tag::javaClass.name}")
+                  }
+                  if (selectedTags.contains(tag)) {
+                    postDetailsViewModel.removeTag(tag)
+                  } else {
+                    postDetailsViewModel.addTag(tag)
                   }
                 }
                 .padding(horizontal = 16.dp),
@@ -402,7 +403,7 @@ fun PostDetails(
 fun PostDetailsPreview() {
   PreviewSetupBrowserViewModel { viewModel ->
     PostDetails(
-      viewModel = viewModel,
+      browserViewModel = viewModel,
       postIndex = 0,
       innerPadding = PaddingValues(0.dp),
       onSelectedTagsAddToSearchClick = {},

@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -48,7 +49,6 @@ import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderEditDialogNavKey
 import ru.xllifi.jetsnatcher.navigation.screen.settings.addBlacklistedTag
 import ru.xllifi.jetsnatcher.proto.history.HistoryEntryProto
 import ru.xllifi.jetsnatcher.proto.historyDataStore
-import ru.xllifi.jetsnatcher.proto.settings.BlacklistedTagProto
 import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 
@@ -131,6 +131,7 @@ fun Browser(
     entryDecorators = listOf(
       rememberSaveableStateHolderNavEntryDecorator(),
       rememberRoundedCornerNavEntryDecorator(),
+      rememberViewModelStoreNavEntryDecorator(),
     ),
     entryProvider = entryProvider {
       entry<BrowserNavigation.Main> { key ->
@@ -192,7 +193,7 @@ fun Browser(
       }
       entry<BrowserNavigation.PostDetails> { key ->
         PostDetails(
-          viewModel = viewModel,
+          browserViewModel = viewModel,
           postIndex = key.postIndex,
           innerPadding = innerPadding,
           onSelectedTagsAddToSearchClick = { tags -> newSearch(searchTags + tags) },
