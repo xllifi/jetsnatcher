@@ -50,8 +50,11 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import ru.xllifi.booru_api.Post
 import ru.xllifi.jetsnatcher.extensions.FullPreview
+import ru.xllifi.jetsnatcher.extensions.PreviewSetup
 import ru.xllifi.jetsnatcher.extensions.conditional
+import ru.xllifi.jetsnatcher.extensions.dpToPx
 import ru.xllifi.jetsnatcher.extensions.isHorizontal
+import ru.xllifi.jetsnatcher.extensions.plus
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserViewModel
 import ru.xllifi.jetsnatcher.samplePosts
 import ru.xllifi.jetsnatcher.ui.components.Tag
@@ -59,7 +62,7 @@ import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun PostOverlay(
+fun Overlay(
   modifier: Modifier = Modifier,
   show: Boolean,
   viewModel: BrowserViewModel,
@@ -133,10 +136,17 @@ fun TopTagsRow(
   innerPadding: PaddingValues,
 ) {
   LazyRow(
-    contentPadding = PaddingValues(horizontal = 16.dp),
+    contentPadding = PaddingValues(horizontal = 16.dp) + PaddingValues(bottom = 16.dp),
     horizontalArrangement = Arrangement.spacedBy(4.dp),
     modifier = Modifier
       .pointerInteropFilter { false }
+      .background(
+        brush = Brush.verticalGradient(
+          0.00f to Color.Black,
+          0.90f to Color.Black.copy(0.3f),
+          1.00f to Color.Transparent,
+        )
+      )
       .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
       .drawWithContent {
         drawContent()
@@ -150,8 +160,7 @@ fun TopTagsRow(
           blendMode = BlendMode.DstOut,
         )
       }
-      .padding(top = innerPadding.calculateTopPadding())
-      .padding(vertical = 12.dp),
+      .padding(top = innerPadding.calculateTopPadding()),
   ) {
     items(tags) {
       Tag(it) { label, value, fgColor, bgColor ->
@@ -172,7 +181,7 @@ fun TopTagsRow(
 @FullPreview
 @Composable
 fun TopTagsRowPreview() {
-  JetSnatcherTheme {
+  PreviewSetup {
     TopTagsRow(
       tags = listOf("tag1", "tag2", "tag3"),
       innerPadding = PaddingValues(0.dp),

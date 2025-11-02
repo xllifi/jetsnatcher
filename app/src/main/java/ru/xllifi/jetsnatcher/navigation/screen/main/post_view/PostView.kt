@@ -1,6 +1,5 @@
 package ru.xllifi.jetsnatcher.navigation.screen.main.post_view
 
-import android.util.Log
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -193,7 +192,7 @@ fun SharedTransitionScope.PostView(
             }
           )
           // Info overlay
-          PostOverlay(
+          Overlay(
             modifier = Modifier
               .fillMaxSize()
               .renderInSharedTransitionScopeOverlay(zIndexInOverlay = 2f)
