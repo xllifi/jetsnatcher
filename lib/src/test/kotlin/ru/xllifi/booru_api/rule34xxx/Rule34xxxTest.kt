@@ -2,21 +2,21 @@ package ru.xllifi.booru_api.rule34xxx
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.respondOk
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import ru.xllifi.booru_api.Image
+import ru.xllifi.booru_api.Note
 import ru.xllifi.booru_api.Post
 import ru.xllifi.booru_api.Rating
 import ru.xllifi.booru_api.Tag
 import ru.xllifi.booru_api.TagCategory
+import ru.xllifi.booru_api.respondXml
 
 const val autocompleteResponse = """[
   {
@@ -110,11 +110,35 @@ val correctTags: List<Tag> = listOf(
     category = TagCategory.General
   )
 )
-
-fun MockRequestHandleScope.respondXml(content: String): HttpResponseData = respond(
-  content,
-  status = HttpStatusCode.OK,
-  headers = headersOf(HttpHeaders.ContentType, "text/xml")
+private const val notesResponse = """<notes type="array">
+  <note
+    version="1"
+    id="0"
+    post_id="0"
+    x="100"
+    y="100"
+    width="10"
+    height="10"
+    body="Note text"
+    creator_id="0"
+    updated_at="Thu Jan 01 00:00:00 +0000 1970"
+    created_at="Thu Jan 01 00:00:00 +0000 1970"
+    is_active="true"
+  />
+</notes>"""
+private val correctNotes: List<Note> = listOf(
+  Note(
+    id = 0,
+    postId = 0,
+    x = 100,
+    y = 100,
+    width = 10,
+    height = 10,
+    body = "Note text",
+    authorId = 0,
+    createdAt = 0,
+    isActive = true,
+  )
 )
 
 class Rule34xxxTest {
@@ -124,6 +148,8 @@ class Rule34xxxTest {
       respondXml(content = postsResponse)
     } else if (url.contains("s=tag")) {
       respondXml(content = tagsResponse)
+    } else if (url.contains("s=note")) {
+      respondXml(content = notesResponse)
     } else if (url.contains("autocomplete")) {
       respond(
         content = autocompleteResponse,
@@ -141,8 +167,8 @@ class Rule34xxxTest {
   @Test
   fun getAutoComplete() {
     runBlocking {
-      val gb = Rule34xxx(httpClient)
-      val autocomplete = gb.getAutoComplete("yui")
+      val r34 = Rule34xxx(httpClient)
+      val autocomplete = r34.getAutoComplete("yui")
       println(autocomplete)
       println(correctAutocomplete)
       assert(autocomplete == correctAutocomplete)
@@ -152,8 +178,8 @@ class Rule34xxxTest {
   @Test
   fun getPosts() {
     runBlocking {
-      val gb = Rule34xxx(httpClient)
-      val posts = gb.getPosts(listOf(), 0, 0)
+      val r34 = Rule34xxx(httpClient)
+      val posts = r34.getPosts(listOf(), 0, 0)
       println(posts)
       assert(posts == correctPosts)
     }
@@ -162,13 +188,24 @@ class Rule34xxxTest {
   @Test
   fun getTags() {
     runBlocking {
-      val gb = Rule34xxx(httpClient)
-      val tags = gb.getTags(listOf(), 0, 0)
+      val r34 = Rule34xxx(httpClient)
+      val tags = r34.getTags(listOf("tag_1"), 0, 0)
       assert(tags == correctTags)
     }
   }
 
   @Test
   fun getComments() {
+    TODO("Not yet implemented")
   }
+
+  @Test
+  fun getNotes() {
+    runBlocking {
+      val r34 = Rule34xxx(httpClient)
+      val notes = r34.getNotes(0)
+      assert(notes == correctNotes)
+    }
+  }
+
 }

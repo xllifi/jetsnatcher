@@ -200,6 +200,8 @@ enum class TagCategory() {
   }
 }
 
+val tagSortingComparator = compareBy<Tag>({ it.category.priority() }, { it.label })
+
 @Serializable
 data class Post(
   val id: Int,
@@ -239,7 +241,7 @@ data class Post(
 
   suspend fun parseTags(provider: Provider): List<Tag> {
     return provider.getTags(this.unparsedTags, page = 0, limit = this.unparsedTags.size)
-      ?.sortedWith(compareBy({ it.category.priority() }, { it.label }))
+      ?.sortedWith(tagSortingComparator)
       ?: emptyList()
   }
 

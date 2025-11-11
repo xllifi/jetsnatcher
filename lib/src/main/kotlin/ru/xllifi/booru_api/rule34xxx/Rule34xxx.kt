@@ -61,8 +61,8 @@ class Rule34xxx(
     return body.map { it.toGenericComment() }
   }
 
-  override suspend fun getNotes(postId: Int): List<Note>? {
-    val response = httpClient.get(this.routes.parseComments(postId))
+  override suspend fun getNotes(postId: Int): List<Note> {
+    val response = httpClient.get(this.routes.parseNotes(postId))
     checkBadStatus(response)
     val body: List<Rule34xxxNote> = response.body()
     return body.map { it.toGenericNote() }

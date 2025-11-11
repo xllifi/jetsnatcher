@@ -13,7 +13,7 @@ kotlin {
   jvmToolchain(21)
 }
 
-tasks.withType<Test>().configureEach {
+tasks.test {
   // Configure all test Gradle tasks to use JUnitPlatform.
   useJUnitPlatform()
 
@@ -27,11 +27,10 @@ tasks.withType<Test>().configureEach {
   }
 }
 
-
 dependencies {
-//  implementation(libs.kotlin.gradle.plugin)
   implementation(libs.bundles.ktor)
   implementation(libs.bundles.kotlinx)
+  testImplementation(kotlin("test"))
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.ktor.client.mock)
 }

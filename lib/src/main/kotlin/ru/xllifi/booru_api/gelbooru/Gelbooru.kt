@@ -53,7 +53,7 @@ class Gelbooru(
     return emptyList()
   }
 
-  override suspend fun getNotes(postId: Int): List<Note>? {
+  override suspend fun getNotes(postId: Int): List<Note> {
     val response = httpClient.get(this.routes.parseNotes(postId))
     checkBadStatus(response)
     val body: List<GelbooruNote> = response.body()
