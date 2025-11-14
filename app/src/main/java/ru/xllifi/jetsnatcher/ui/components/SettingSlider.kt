@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.times
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.extensions.numPlaces
+import ru.xllifi.jetsnatcher.ui.dialog.TextFieldDialogNavKey
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -100,13 +101,15 @@ fun SettingSlider(
           .conditional(
             onInputDialog != defaultOnInputDialog,
             Modifier.clickable {
-              onInputDialog(TextFieldDialogNavKey(
-                title = title,
-                description = description,
-                initValue = value.toString(),
-                onDone = { onValueChange(it.toFloatOrNull() ?: value) },
-                acceptableCharactersRegex = "[0-9.]"
-              ))
+              onInputDialog(
+                TextFieldDialogNavKey(
+                  title = title,
+                  description = description,
+                  initValue = value.toString(),
+                  onDone = { onValueChange(it.toFloatOrNull() ?: value) },
+                  acceptableCharactersRegex = "[0-9.]"
+                )
+              )
             }
           ),
         textAlign = TextAlign.Center,

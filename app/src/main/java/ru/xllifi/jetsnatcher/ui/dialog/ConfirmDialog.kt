@@ -1,4 +1,4 @@
-package ru.xllifi.jetsnatcher.ui.components
+package ru.xllifi.jetsnatcher.ui.dialog
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,9 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.EntryProviderScope
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.scene.DialogSceneStrategy.Companion.dialog
 import kotlinx.serialization.Serializable
 import ru.xllifi.jetsnatcher.extensions.FullPreview
+import ru.xllifi.jetsnatcher.extensions.ignoreRoundedCorners
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
 @Serializable
@@ -29,6 +33,24 @@ data class ConfirmDialogNavKey(
   val description: String,
   val buttons: @Composable RowScope.(onDismiss: () -> Unit) -> Unit,
 ) : NavKey
+
+fun EntryProviderScope<NavKey>.confirmDialogNavigation(
+  backStack: NavBackStack<NavKey>,
+) {
+  entry<ConfirmDialogNavKey>(
+    metadata = dialog() + ignoreRoundedCorners()
+  )
+  { key ->
+    ConfirmDialog(
+      title = key.title,
+      description = key.description,
+      buttons = key.buttons,
+      onDismiss = {
+        backStack.removeAt(backStack.lastIndex)
+      }
+    )
+  }
+}
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

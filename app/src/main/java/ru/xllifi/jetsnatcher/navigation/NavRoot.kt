@@ -54,29 +54,20 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.DialogSceneStrategy
-import androidx.navigation3.scene.DialogSceneStrategy.Companion.dialog
 import androidx.navigation3.ui.NavDisplay
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import ru.xllifi.jetsnatcher.extensions.ignoreRoundedCorners
 import ru.xllifi.jetsnatcher.extensions.rememberRoundedCornerNavEntryDecorator
 import ru.xllifi.jetsnatcher.navigation.screen.main.Browser
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserNavKey
-import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderEditDialog
-import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderEditDialogNavKey
-import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderTypeDialog
-import ru.xllifi.jetsnatcher.navigation.screen.settings.ProviderTypeDialogNavKey
+import ru.xllifi.jetsnatcher.ui.dialog.ProviderEditDialogNavKey
 import ru.xllifi.jetsnatcher.navigation.screen.settings.SettingsNavigation
 import ru.xllifi.jetsnatcher.navigation.screen.settings.defaultProviderType
 import ru.xllifi.jetsnatcher.navigation.screen.settings.settingsNavigation
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
-import ru.xllifi.jetsnatcher.ui.components.ConfirmDialog
-import ru.xllifi.jetsnatcher.ui.components.ConfirmDialogNavKey
-import ru.xllifi.jetsnatcher.ui.components.TextFieldDialog
-import ru.xllifi.jetsnatcher.ui.components.TextFieldDialogNavKey
+import ru.xllifi.jetsnatcher.ui.dialog.dialogsNavigation
 import java.util.concurrent.CancellationException
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -259,80 +250,9 @@ fun NavRoot(
             innerPadding = innerPadding,
           )
         }
-        entry<ProviderEditDialogNavKey>(
-          metadata = dialog() + ignoreRoundedCorners()
+        dialogsNavigation(
+          backStack = backStack
         )
-        { key ->
-          var providerType by remember { mutableStateOf(key.providerType) }
-          val context = LocalContext.current
-          ProviderEditDialog(
-            provider = key.provider,
-            index = key.index,
-            providerType = providerType,
-            onSelectProviderType = {
-              backStack.add(ProviderTypeDialogNavKey { providerType = it })
-            },
-            onDone = { newProviderProto, index ->
-              GlobalScope.launch {
-                context.settingsDataStore.updateData { settings ->
-                  val providers = settings.providers.toMutableList()
-                  if (index != null && index >= 0) {
-                    val oldProviderProto = providers[index]
-                    providers[index] = newProviderProto
-                    backStack.forEachIndexed { index, it ->
-                      if (it is BrowserNavKey && it.providerProto == oldProviderProto) {
-                        backStack[index] = it.copy(providerProto = newProviderProto)
-                      }
-                    }
-                  } else {
-                    providers.add(newProviderProto)
-                  }
-                  settings.copy(
-                    providers = providers
-                  )
-                }
-              }
-              backStack.removeAt(backStack.lastIndex)
-            }
-          )
-        }
-        entry<ProviderTypeDialogNavKey>(
-          metadata = dialog() + ignoreRoundedCorners()
-        )
-        { key ->
-          ProviderTypeDialog { providerType ->
-            key.onSelectType(providerType)
-            backStack.removeAt(backStack.lastIndex)
-          }
-        }
-        entry<ConfirmDialogNavKey>(
-          metadata = dialog() + ignoreRoundedCorners()
-        )
-        { key ->
-          ConfirmDialog(
-            title = key.title,
-            description = key.description,
-            buttons = key.buttons,
-            onDismiss = {
-              backStack.removeAt(backStack.lastIndex)
-            }
-          )
-        }
-        entry<TextFieldDialogNavKey>(
-          metadata = dialog() + ignoreRoundedCorners()
-        )
-        { key ->
-          TextFieldDialog(
-            title = key.title,
-            description = key.description,
-            initValue = key.initValue,
-            onDone = {
-              key.onDone(it)
-              backStack.removeAt(backStack.lastIndex)
-            },
-            acceptableCharactersRegex = key.acceptableCharactersRegex?.let { Regex(it) }
-          )
-        }
       },
     )
   }

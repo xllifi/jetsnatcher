@@ -22,6 +22,7 @@ import ru.xllifi.jetsnatcher.proto.SettingsSerializer
 import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.components.DoubleActionListEntry
+import ru.xllifi.jetsnatcher.ui.dialog.ProviderEditDialogNavKey
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
 val defaultProviderType = ProviderType.Gelbooru

@@ -1,7 +1,5 @@
 package ru.xllifi.jetsnatcher.navigation.screen.settings
 
-import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -17,7 +15,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastAny
 import androidx.datastore.core.DataStore
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -27,9 +24,9 @@ import ru.xllifi.jetsnatcher.proto.SettingsSerializer
 import ru.xllifi.jetsnatcher.proto.settings.BlacklistedTagProto
 import ru.xllifi.jetsnatcher.proto.settings.SettingsProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
-import ru.xllifi.jetsnatcher.ui.components.ConfirmDialogNavKey
+import ru.xllifi.jetsnatcher.ui.dialog.ConfirmDialogNavKey
 import ru.xllifi.jetsnatcher.ui.components.DoubleActionListEntry
-import ru.xllifi.jetsnatcher.ui.components.TextFieldDialogNavKey
+import ru.xllifi.jetsnatcher.ui.dialog.TextFieldDialogNavKey
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
 fun addBlacklistedTag(settingsDataStore: DataStore<SettingsProto>, vararg values: String) {

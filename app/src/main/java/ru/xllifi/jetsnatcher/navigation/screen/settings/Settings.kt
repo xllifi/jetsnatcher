@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserNavKey
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
-import ru.xllifi.jetsnatcher.ui.components.ConfirmDialogNavKey
+import ru.xllifi.jetsnatcher.ui.dialog.ConfirmDialogNavKey
 
 object SettingsNavigation {
   interface SettingsNavKey : NavKey
