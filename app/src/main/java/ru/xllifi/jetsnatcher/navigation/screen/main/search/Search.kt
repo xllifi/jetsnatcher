@@ -102,7 +102,7 @@ fun Search(
   innerPadding: PaddingValues,
   onNewSearch: (providerProto: ProviderProto, searchTags: List<Tag>) -> Unit,
 ) {
-  var mutableTags = remember { searchTags.toMutableStateList() }
+  val mutableTags = remember { searchTags.toMutableStateList() }
   var autocompleteTags by remember { mutableStateOf(emptyList<Tag>()) }
 
   Box(
@@ -387,15 +387,15 @@ fun SearchTagsFlowRow(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
               ) {
-                val newTag = if (tag.value.startsWith('-')) {
+                val newTag = if (value.startsWith('-')) {
                   tag.copy(
-                    label = tag.label.removeRange(0, 1),
-                    value = tag.value.removeRange(0, 1)
+                    label = label.removeRange(0, 1),
+                    value = value.removeRange(0, 1)
                   )
                 } else {
                   tag.copy(
-                    label = "-${tag.label}",
-                    value = "-${tag.value}"
+                    label = "-${label}",
+                    value = "-${value}"
                   )
                 }
                 onInverseTag(tags.indexOf(tag), newTag)
@@ -529,10 +529,10 @@ fun AutocompleteTags(
     modifier = modifier.clip(MaterialTheme.shapes.medium),
     verticalArrangement = Arrangement.spacedBy(4.dp),
   ) {
-    itemsIndexed(
+    items(
       items = autocompleteTags,
-      key = { index, tag -> tag.value }
-    ) { index, tag ->
+      key = { tag -> tag.value }
+    ) { tag ->
       AutocompleteTag(
         tag = tag,
         onTagClick = onTagClick
