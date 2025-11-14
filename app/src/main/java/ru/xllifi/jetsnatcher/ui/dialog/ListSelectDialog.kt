@@ -63,7 +63,7 @@ interface ListSelectDialogScope<T> {
   fun items(values: List<T>, labels: List<String>)
 }
 
-class ListSelectDialogScopeImpl<T> : ListSelectDialogScope<T> {
+internal class ListSelectDialogScopeImpl<T> : ListSelectDialogScope<T> {
   val items = mutableListOf<ListSelectDialogScope.Item<T>>()
 
   override fun item(value: T, label: String) {
