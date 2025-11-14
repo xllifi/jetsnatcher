@@ -65,6 +65,7 @@ fun removeBlacklistedTag(settingsDataStore: DataStore<SettingsProto>, vararg val
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BlacklistSettingsPage(
+  onBack: () -> Unit,
   onAddTag: (navKey: TextFieldDialogNavKey) -> Unit,
   onRemoveTag: (navKey: ConfirmDialogNavKey) -> Unit,
   /** only use in [@Previews][androidx.compose.ui.tooling.preview.Preview] */
@@ -75,7 +76,7 @@ fun BlacklistSettingsPage(
 
   SettingsPage(
     title = "Blacklist",
-    onBack = {}
+    onBack = onBack,
   ) {
     group(null) {
       settingDoubleActionList(
@@ -136,6 +137,7 @@ val previewBlacklistedTags = listOf(
 private fun BlacklistSettingsPagePreview() {
   PreviewSetup {
     BlacklistSettingsPage(
+      onBack = { },
       onAddTag = { },
       onRemoveTag = { },
       previewSettingsProto = mutableStateOf(SettingsProto(

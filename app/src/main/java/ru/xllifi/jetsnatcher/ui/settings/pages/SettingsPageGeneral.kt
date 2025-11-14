@@ -21,6 +21,7 @@ import ru.xllifi.jetsnatcher.ui.settings.SettingsPage
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun GeneralSettingsPage(
+  onBack: () -> Unit,
   onManageProviders: () -> Unit,
   onManageBlacklist: () -> Unit,
   onInputDialog: OnInputDialog,
@@ -31,7 +32,7 @@ fun GeneralSettingsPage(
 
   SettingsPage(
     title = "Settings",
-    onBack = {},
+    onBack = onBack,
   ) {
     group("Post list") {
       settingSlider(
@@ -110,6 +111,7 @@ fun GeneralSettingsPagePreview() {
   PreviewSetup {
     Scaffold { innerPadding ->
       GeneralSettingsPage(
+        onBack = { },
         onManageProviders = { },
         onManageBlacklist = { },
         onInputDialog = { },

@@ -35,6 +35,7 @@ val defaultProviderType = ProviderType.Gelbooru
 
 @Composable
 fun ProvidersSettingsPage(
+  onBack: () -> Unit,
   onEditProvider: (navKey: ProviderEditDialogNavKey) -> Unit,
   onDeleteProvider: (
     provider: ProviderProto,
@@ -48,7 +49,7 @@ fun ProvidersSettingsPage(
 
   SettingsPage(
     "Providers",
-    onBack = {}
+    onBack = onBack,
   ) {
     group(null) {
       settingDoubleActionList(
@@ -91,6 +92,7 @@ fun ProvidersSettingsPage(
 private fun ProvidersSettingsPagePreview() {
   JetSnatcherTheme {
     ProvidersSettingsPage(
+      onBack = { },
       onEditProvider = { },
       onDeleteProvider = { _, _ -> },
       previewSettingsProto = mutableStateOf(SettingsProto(

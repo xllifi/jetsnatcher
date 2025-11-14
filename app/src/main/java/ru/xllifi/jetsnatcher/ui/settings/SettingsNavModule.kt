@@ -40,6 +40,7 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
 ) {
   entry<SettingsNavigation.General> {
     GeneralSettingsPage(
+      onBack = { backStack.removeAt(backStack.lastIndex) },
       onManageProviders = {
         backStack.add(SettingsNavigation.Providers)
       },
@@ -55,6 +56,7 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
     val settingsDataStore = LocalContext.current.settingsDataStore
     val scope = rememberCoroutineScope()
     ProvidersSettingsPage(
+      onBack = { backStack.removeAt(backStack.lastIndex) },
       onEditProvider = { navKey ->
         backStack.add(navKey)
       },
@@ -97,6 +99,7 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
   }
   entry<SettingsNavigation.Blacklist> {
     BlacklistSettingsPage(
+      onBack = { backStack.removeAt(backStack.lastIndex) },
       onAddTag = { navKey -> backStack.add(navKey) },
       onRemoveTag = { navKey -> backStack.add(navKey) },
     )
