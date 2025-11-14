@@ -63,9 +63,9 @@ import ru.xllifi.jetsnatcher.extensions.rememberRoundedCornerNavEntryDecorator
 import ru.xllifi.jetsnatcher.navigation.screen.main.Browser
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserNavKey
 import ru.xllifi.jetsnatcher.ui.dialog.ProviderEditDialogNavKey
-import ru.xllifi.jetsnatcher.navigation.screen.settings.SettingsNavigation
-import ru.xllifi.jetsnatcher.navigation.screen.settings.defaultProviderType
-import ru.xllifi.jetsnatcher.navigation.screen.settings.settingsNavigation
+import ru.xllifi.jetsnatcher.ui.settings.SettingsNavigation
+import ru.xllifi.jetsnatcher.ui.settings.pages.defaultProviderType
+import ru.xllifi.jetsnatcher.ui.settings.settingsNavigation
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.dialog.dialogsNavigation
 import java.util.concurrent.CancellationException

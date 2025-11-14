@@ -1,33 +1,33 @@
-package ru.xllifi.jetsnatcher.navigation.screen.settings
+package ru.xllifi.jetsnatcher.ui.settings.pages
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.DataStoreFactory
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import ru.xllifi.jetsnatcher.extensions.FullPreviewSysUi
+import ru.xllifi.jetsnatcher.extensions.PreviewSetup
 import ru.xllifi.jetsnatcher.extensions.timestampToRelativeTimeSpan
 import ru.xllifi.jetsnatcher.proto.SettingsSerializer
 import ru.xllifi.jetsnatcher.proto.settings.BlacklistedTagProto
 import ru.xllifi.jetsnatcher.proto.settings.SettingsProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.dialog.ConfirmDialogNavKey
-import ru.xllifi.jetsnatcher.ui.components.DoubleActionListEntry
 import ru.xllifi.jetsnatcher.ui.dialog.TextFieldDialogNavKey
-import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
+import ru.xllifi.jetsnatcher.ui.settings.SettingsPage
 
 fun addBlacklistedTag(settingsDataStore: DataStore<SettingsProto>, vararg values: String) {
   GlobalScope.launch {
@@ -62,25 +62,27 @@ fun removeBlacklistedTag(settingsDataStore: DataStore<SettingsProto>, vararg val
   }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BlacklistSettingsPage(
-  innerPadding: PaddingValues,
   onAddTag: (navKey: TextFieldDialogNavKey) -> Unit,
   onRemoveTag: (navKey: ConfirmDialogNavKey) -> Unit,
+  /** only use in [@Previews][androidx.compose.ui.tooling.preview.Preview] */
+  previewSettingsProto: State<SettingsProto>? = null,
 ) {
   val settingsDataStore = LocalContext.current.settingsDataStore
-  val settingsState by settingsDataStore.data.collectAsState(SettingsSerializer.defaultValue)
+  val settingsState by previewSettingsProto ?: settingsDataStore.data.collectAsState(SettingsSerializer.defaultValue)
 
-  LazyColumn(
-    modifier = Modifier
-      .padding(16.dp),
-    contentPadding = innerPadding,
-    verticalArrangement = Arrangement.spacedBy(8.dp),
+  SettingsPage(
+    title = "Blacklist",
+    onBack = {}
   ) {
-    // region TODO: Move to FAB
-    item {
-      Button(
-        onClick = {
+    group(null) {
+      settingDoubleActionList(
+        label = "Blacklisted tags",
+        buttonText = "Add tag",
+        buttonIcon = Icons.Outlined.Add,
+        onButtonClick = {
           onAddTag(
             TextFieldDialogNavKey(
               title = "Add blacklisted tag",
@@ -89,28 +91,22 @@ fun BlacklistSettingsPage(
               onDone = { value -> addBlacklistedTag(settingsDataStore, value) },
             )
           )
-        }
-      ) {
-        Text("Add tag")
-      }
-    }
-    // endregion
-    itemsIndexed(settingsState.blacklistedTags) { index, tag ->
-      DoubleActionListEntry(
-        title = tag.value,
-        description = "Added ${timestampToRelativeTimeSpan(tag.createdAt)}",
-        primaryActionIcon = null,
-        onPrimaryAction = null,
-        secondaryActionIcon = Icons.Outlined.Delete,
-        onSecondaryAction = {
+        },
+        items = settingsState.blacklistedTags,
+        itemTitleTransform = { it.value },
+        itemDescriptionTransform = { "Added ${timestampToRelativeTimeSpan(it.createdAt)}" },
+        itemPrimaryActionIcon = Icons.Outlined.Tag,
+        onItemPrimaryActionClick = null,
+        itemSecondaryActionIcon = Icons.Outlined.Delete,
+        onItemSecondaryActionClick = {
           onRemoveTag(
             ConfirmDialogNavKey(
-              title = "Remove ${tag.value} from blacklist?",
+              title = "Remove ${it.value} from blacklist?",
               description = "This action cannot be undone.",
             ) { onDismiss ->
               Button(
                 onClick = {
-                  removeBlacklistedTag(settingsDataStore, tag.value)
+                  removeBlacklistedTag(settingsDataStore, it.value)
                   onDismiss()
                 }
               ) {
@@ -123,16 +119,34 @@ fun BlacklistSettingsPage(
               }
             }
           )
-        },
+        }
       )
     }
   }
 }
 
-@FullPreviewSysUi
+val previewBlacklistedTags = listOf(
+  BlacklistedTagProto(0, "tag1"),
+  BlacklistedTagProto(1763140545322, "tag2"),
+  BlacklistedTagProto(0, "tag3"),
+)
+
 @Composable
+@FullPreviewSysUi
 private fun BlacklistSettingsPagePreview() {
-  JetSnatcherTheme {
-    BlacklistSettingsPage(PaddingValues(0.dp), { }, { })
+  PreviewSetup {
+    BlacklistSettingsPage(
+      onAddTag = { },
+      onRemoveTag = { },
+      previewSettingsProto = mutableStateOf(SettingsProto(
+        blacklistedTags = listOf(
+          BlacklistedTagProto(0, "tag1"),
+          BlacklistedTagProto(0, "tag2"),
+          BlacklistedTagProto(0, "tag3"),
+          BlacklistedTagProto(1763147868000, "tag4"),
+          BlacklistedTagProto(0, "very_very_very_very_very_very_very_very_very_very_very_very_long_tag"),
+        )
+      ))
+    )
   }
 }

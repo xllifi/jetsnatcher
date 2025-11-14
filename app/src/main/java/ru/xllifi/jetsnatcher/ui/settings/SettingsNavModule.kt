@@ -1,11 +1,12 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package ru.xllifi.jetsnatcher.navigation.screen.settings
+package ru.xllifi.jetsnatcher.ui.settings
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavBackStack
@@ -16,6 +17,9 @@ import kotlinx.serialization.Serializable
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserNavKey
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.dialog.ConfirmDialogNavKey
+import ru.xllifi.jetsnatcher.ui.settings.pages.BlacklistSettingsPage
+import ru.xllifi.jetsnatcher.ui.settings.pages.GeneralSettingsPage
+import ru.xllifi.jetsnatcher.ui.settings.pages.ProvidersSettingsPage
 
 object SettingsNavigation {
   interface SettingsNavKey : NavKey
@@ -36,7 +40,6 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
 ) {
   entry<SettingsNavigation.General> {
     GeneralSettingsPage(
-      innerPadding = innerPadding,
       onManageProviders = {
         backStack.add(SettingsNavigation.Providers)
       },
@@ -50,8 +53,8 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
   }
   entry<SettingsNavigation.Providers> {
     val settingsDataStore = LocalContext.current.settingsDataStore
+    val scope = rememberCoroutineScope()
     ProvidersSettingsPage(
-      innerPadding = innerPadding,
       onEditProvider = { navKey ->
         backStack.add(navKey)
       },
@@ -66,7 +69,7 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
                 backStack.removeAll {
                   it is BrowserNavKey && it.providerProto == provider
                 }
-                GlobalScope.launch {
+                scope.launch {
                   settingsDataStore.updateData { settings ->
                     val providers = settings.providers.toMutableList()
                     providers.removeAt(index)
@@ -94,7 +97,6 @@ fun EntryProviderScope<NavKey>.settingsNavigation(
   }
   entry<SettingsNavigation.Blacklist> {
     BlacklistSettingsPage(
-      innerPadding = innerPadding,
       onAddTag = { navKey -> backStack.add(navKey) },
       onRemoveTag = { navKey -> backStack.add(navKey) },
     )

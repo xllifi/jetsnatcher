@@ -1,14 +1,12 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
-package ru.xllifi.jetsnatcher.ui.components
+package ru.xllifi.jetsnatcher.ui.settings.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -26,10 +24,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import ru.xllifi.jetsnatcher.extensions.FullPreview
+import ru.xllifi.jetsnatcher.ui.settings.SettingDefaults.settingModifierClickable
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
 @Composable
@@ -41,13 +40,11 @@ fun SettingSwitch(
 ) {
   Row (
     modifier = Modifier
-      .clip(MaterialTheme.shapes.medium)
-      .clickable {
+      .settingModifierClickable(
+        role = Role.Switch,
+      ) {
         onCheckedChange(!checked)
-      }
-      .background(MaterialTheme.colorScheme.surfaceContainer)
-      .heightIn(min = 64.dp)
-      .padding(16.dp),
+      },
     verticalAlignment = Alignment.CenterVertically,
     horizontalArrangement = Arrangement.spacedBy(16.dp),
   ) {
@@ -70,8 +67,11 @@ fun SettingSwitch(
       }
     }
     Switch(
+      modifier = Modifier
+        .heightIn(max = 32.dp),
       checked = checked,
       onCheckedChange = onCheckedChange,
+      colors = SwitchDefaults.colors(),
       thumbContent = {
         if (checked) {
           Icon(
@@ -97,8 +97,8 @@ fun SettingSwitchPreview() {
   var checked by remember { mutableStateOf(true) }
   JetSnatcherTheme {
     SettingSwitch(
-      title = "Preview setting. Long title to go on a second line PLEASE!",
-      description = "Preview setting description. This text is supposed to describe what the option should do. Some more text to make it go on a third line.",
+      title = "Preview setting",
+      description = "Preview setting description.",
       checked,
       onCheckedChange = { checked = it }
     )

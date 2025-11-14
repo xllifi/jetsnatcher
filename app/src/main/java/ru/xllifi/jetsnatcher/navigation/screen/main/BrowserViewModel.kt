@@ -13,6 +13,7 @@ import ru.xllifi.booru_api.Tag
 import ru.xllifi.jetsnatcher.extensions.toReal
 import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
+import ru.xllifi.jetsnatcher.samplePosts
 
 data class BrowserUiState(
   var posts: List<Post> = emptyList(),
@@ -41,8 +42,13 @@ class BrowserViewModel(
   context: Context,
   providerProto: ProviderProto,
   val searchTags: List<Tag>,
+  loadPreviewPosts: Boolean = false,
 ) : ViewModel() {
-  private val _uiState = MutableStateFlow(BrowserUiState())
+  private val _uiState = MutableStateFlow(
+    BrowserUiState(
+      posts = if (loadPreviewPosts) samplePosts else emptyList()
+    )
+  )
   val uiState = _uiState.asStateFlow()
 
   private val settingsDataStore = context.settingsDataStore

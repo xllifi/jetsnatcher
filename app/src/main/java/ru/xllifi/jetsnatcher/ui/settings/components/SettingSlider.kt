@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
-package ru.xllifi.jetsnatcher.ui.components
+package ru.xllifi.jetsnatcher.ui.settings.components
 
 import androidx.annotation.IntRange
 import androidx.compose.foundation.background
@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +31,7 @@ import androidx.compose.ui.unit.times
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.extensions.numPlaces
+import ru.xllifi.jetsnatcher.ui.settings.SettingDefaults.settingModifier
 import ru.xllifi.jetsnatcher.ui.dialog.TextFieldDialogNavKey
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 import java.math.BigDecimal
@@ -56,10 +55,7 @@ fun SettingSlider(
 ) {
   Column(
     modifier = Modifier
-      .clip(MaterialTheme.shapes.medium)
-      .background(MaterialTheme.colorScheme.surfaceContainer)
-      .heightIn(min = 64.dp)
-      .padding(16.dp),
+      .settingModifier(),
     verticalArrangement = Arrangement.spacedBy(4.dp),
   ) {
     Column(

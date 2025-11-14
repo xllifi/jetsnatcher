@@ -39,6 +39,7 @@ import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
@@ -58,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
@@ -68,11 +70,13 @@ import kotlinx.coroutines.launch
 import ru.xllifi.booru_api.Tag
 import ru.xllifi.booru_api.TagCategory
 import ru.xllifi.jetsnatcher.extensions.FullPreview
-import ru.xllifi.jetsnatcher.extensions.PreviewSetupBrowserViewModel
+import ru.xllifi.jetsnatcher.extensions.PreviewSetup
 import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserViewModel
+import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
 import ru.xllifi.jetsnatcher.ui.components.DoubleActionListEntry
 import ru.xllifi.jetsnatcher.ui.components.Tag
+import ru.xllifi.jetsnatcher.ui.settings.components.SettingDoubleActionList
 
 val isUrlRegex = Regex("^(https?://)?.+\\.[a-z]{2,6}(/.*)?$")
 val hostnameRegex = Regex("^(?:https?://)?(?:www\\.)?([^/]+)")
@@ -192,6 +196,7 @@ fun PostDetails(
                       postCount = 0,
                       category = TagCategory.Unknown
                     )
+
                     is Tag -> tag
                     else -> throw IllegalArgumentException("`tag` is neither `String` or `Tag`, but ${tag::javaClass.name}")
                   }
@@ -228,74 +233,70 @@ fun PostDetails(
       || isMediumImageLinkPresent
       || isBestImageLinkPresent
     ) {
-      Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+      data class Link(
+        val title: String,
+        val url: String,
       ) {
-        val uriHandler = LocalUriHandler.current
-        val clipboard = LocalClipboard.current
-        val scope = rememberCoroutineScope()
-
-        fun copy(text: String) {
-          scope.launch {
-            clipboard.setClipEntry(
-              ClipEntry(
-                clipData = ClipData.newPlainText(text, text)
-              )
+        fun getHostname(): String = hostnameRegex.find(post.locationLink!!)?.groupValues?.get(1) ?: "[unknown]"
+      }
+      val uriHandler = LocalUriHandler.current
+      val clipboard = LocalClipboard.current
+      val scope = rememberCoroutineScope()
+      fun copy(text: String) {
+        scope.launch {
+          clipboard.setClipEntry(
+            ClipEntry(
+              clipData = ClipData.newPlainText(text, text)
             )
-          }
+          )
         }
+      }
 
-        Title(text = "Links") // TODO: Translate
-        if (isLocationLinkPresent) {
-          val hostname = hostnameRegex.find(post.locationLink!!)?.groupValues?.get(1)
-            ?: "[unknown]" // TODO: Translate
-          DoubleActionListEntry(
-            title = "Location", // TODO: Translate
-            description = "Open $hostname in browser", // TODO: Translate
-            primaryActionIcon = Icons.Outlined.Language,
-            onPrimaryAction = { uriHandler.openUri(post.locationLink!!) },
-            secondaryActionIcon = Icons.Outlined.ContentCopy,
-            onSecondaryAction = { copy(post.locationLink!!) },
-          )
-        }
-        if (isSourceLinkPresent) {
-          val hostname =
-            hostnameRegex.find(post.source!!)?.groupValues?.get(1) ?: "[unknown]" // TODO: Translate
-          DoubleActionListEntry(
-            title = "Source", // TODO: Translate
-            description = "Open $hostname in browser", // TODO: Translate
-            primaryActionIcon = Icons.Outlined.Language,
-            onPrimaryAction = { uriHandler.openUri(post.source!!) },
-            secondaryActionIcon = Icons.Outlined.ContentCopy,
-            onSecondaryAction = { copy(post.source!!) },
-          )
-        }
-        if (isMediumImageLinkPresent) {
-          val hostname =
-            hostnameRegex.find(post.mediumQualityImage.url)?.groupValues?.get(1)
-              ?: "[unknown]" // TODO: Translate
-          DoubleActionListEntry(
-            title = "Sample file", // TODO: Translate
-            description = "Open $hostname in browser", // TODO: Translate
-            primaryActionIcon = Icons.Outlined.Language,
-            onPrimaryAction = { uriHandler.openUri(post.mediumQualityImage.url) },
-            secondaryActionIcon = Icons.Outlined.ContentCopy,
-            onSecondaryAction = { copy(post.mediumQualityImage.url) },
-          )
-        }
-        if (isBestImageLinkPresent) {
-          val hostname =
-            hostnameRegex.find(post.bestQualityImage.url)?.groupValues?.get(1)
-              ?: "[unknown]" // TODO: Translate
-          DoubleActionListEntry(
-            title = "Original file", // TODO: Translate
-            description = "Open $hostname in browser", // TODO: Translate
-            primaryActionIcon = Icons.Outlined.Language,
-            onPrimaryAction = { uriHandler.openUri(post.bestQualityImage.url) },
-            secondaryActionIcon = Icons.Outlined.ContentCopy,
-            onSecondaryAction = { copy(post.bestQualityImage.url) },
-          )
-        }
+      val links = mutableListOf<Link>()
+
+      if (isLocationLinkPresent) {
+        links.add(Link(
+          "Location",
+          post.locationLink!!,
+        ))
+      }
+      if (isSourceLinkPresent) {
+        links.add(Link(
+          "Source",
+          post.source!!,
+        ))
+      }
+      if (isMediumImageLinkPresent) {
+        links.add(Link(
+          "Sample file",
+          post.mediumQualityImage.url,
+        ))
+      }
+      if (isBestImageLinkPresent) {
+        links.add(Link(
+          "Original file",
+          post.bestQualityImage.url,
+        ))
+      }
+
+      Box(
+        modifier = Modifier
+          .clip(MaterialTheme.shapes.large)
+      ) {
+        // TODO: design an unique component for links
+        SettingDoubleActionList(
+          label = "Links",
+          buttonText = null,
+          buttonIcon = null,
+          onButtonClick = {},
+          items = links,
+          itemTitleTransform = {it.title},
+          itemDescriptionTransform = {"Visit ${it.getHostname()} in browser"},
+          itemPrimaryActionIcon = Icons.Outlined.Language,
+          onItemPrimaryActionClick = { uriHandler.openUri(it.url) },
+          itemSecondaryActionIcon = Icons.Outlined.ContentCopy,
+          onItemSecondaryActionClick = { copy(it.url) },
+        )
       }
     }
 
@@ -306,7 +307,8 @@ fun PostDetails(
     visible = selectedTags.isNotEmpty(),
     enter = slideIn(spring()) { IntOffset(x = it.width, y = 0) },
     exit = slideOut(spring()) { IntOffset(x = it.width, y = 0) },
-  ) {
+  )
+  {
     Box(
       modifier = Modifier
         .fillMaxSize()
@@ -401,14 +403,22 @@ fun PostDetails(
 @FullPreview
 @Composable
 fun PostDetailsPreview() {
-  PreviewSetupBrowserViewModel { viewModel ->
-    PostDetails(
-      browserViewModel = viewModel,
-      postIndex = 0,
-      innerPadding = PaddingValues(0.dp),
-      onSelectedTagsAddToSearchClick = {},
-      onSelectedTagsNewSearchClick = {},
-      onSelectedTagsAddToBlacklistClick = {},
-    )
+  PreviewSetup {
+    Scaffold {
+      val vm = BrowserViewModel(
+        context = LocalContext.current,
+        providerProto = ProviderProto(),
+        searchTags = listOf(),
+        loadPreviewPosts = true,
+      )
+      PostDetails(
+        browserViewModel = vm,
+        postIndex = 0,
+        innerPadding = PaddingValues(0.dp),
+        onSelectedTagsAddToSearchClick = {},
+        onSelectedTagsNewSearchClick = {},
+        onSelectedTagsAddToBlacklistClick = {},
+      )
+    }
   }
 }

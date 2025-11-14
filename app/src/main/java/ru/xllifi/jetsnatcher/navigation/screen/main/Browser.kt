@@ -46,7 +46,7 @@ import ru.xllifi.jetsnatcher.navigation.screen.main.post_view.PostToolbarActions
 import ru.xllifi.jetsnatcher.navigation.screen.main.post_view.PostView
 import ru.xllifi.jetsnatcher.navigation.screen.main.search.Search
 import ru.xllifi.jetsnatcher.ui.dialog.ProviderEditDialogNavKey
-import ru.xllifi.jetsnatcher.navigation.screen.settings.addBlacklistedTag
+import ru.xllifi.jetsnatcher.ui.settings.pages.addBlacklistedTag
 import ru.xllifi.jetsnatcher.proto.history.HistoryEntryProto
 import ru.xllifi.jetsnatcher.proto.historyDataStore
 import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
