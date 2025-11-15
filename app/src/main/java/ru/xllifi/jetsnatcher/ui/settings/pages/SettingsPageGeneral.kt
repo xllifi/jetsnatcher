@@ -109,13 +109,11 @@ fun GeneralSettingsPage(
 @FullPreview
 fun GeneralSettingsPagePreview() {
   PreviewSetup {
-    Scaffold { innerPadding ->
-      GeneralSettingsPage(
-        onBack = { },
-        onManageProviders = { },
-        onManageBlacklist = { },
-        onInputDialog = { },
-      )
-    }
+    GeneralSettingsPage(
+      onBack = { },
+      onManageProviders = { },
+      onManageBlacklist = { },
+      onInputDialog = { },
+    )
   }
 }
