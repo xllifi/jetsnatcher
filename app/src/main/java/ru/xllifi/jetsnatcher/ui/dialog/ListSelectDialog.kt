@@ -52,30 +52,26 @@ fun EntryProviderScope<NavKey>.listSelectDialogNavigation(
   }
 }
 
-interface ListSelectDialogScope<T> {
+@Serializable
+class ListSelectDialogScope<T> {
+  @Serializable
   data class Item<T>(
     val value: T,
     val label: String,
   )
 
-  fun item(value: T, label: String)
-  fun items(items: List<Pair<T, String>>)
-  fun items(values: List<T>, labels: List<String>)
-}
+  val items = mutableListOf<Item<T>>()
 
-internal class ListSelectDialogScopeImpl<T> : ListSelectDialogScope<T> {
-  val items = mutableListOf<ListSelectDialogScope.Item<T>>()
-
-  override fun item(value: T, label: String) {
-    items.add(ListSelectDialogScope.Item(value, label))
+  fun item(value: T, label: String) {
+    items.add(Item(value, label))
   }
 
-  override fun items(items: List<Pair<T, String>>) {
-    this.items.addAll(items.map { ListSelectDialogScope.Item(it.first, it.second) })
+  fun items(items: List<Pair<T, String>>) {
+    this.items.addAll(items.map { Item(it.first, it.second) })
   }
 
-  override fun items(values: List<T>, labels: List<String>) {
-    this.items.addAll(values.mapIndexed { i, el -> ListSelectDialogScope.Item(el, labels[i]) })
+  fun items(values: List<T>, labels: List<String>) {
+    this.items.addAll(values.mapIndexed { i, el -> Item(el, labels[i]) })
   }
 }
 
@@ -85,7 +81,7 @@ fun<T> ListSelectDialog(
   onSelect: (value: T) -> Unit,
   items: ListSelectDialogScope<T>.() -> Unit,
 ) {
-  val scope = remember { ListSelectDialogScopeImpl<T>() }
+  val scope = remember { ListSelectDialogScope<T>() }
   scope.items()
   Column(
     modifier = Modifier

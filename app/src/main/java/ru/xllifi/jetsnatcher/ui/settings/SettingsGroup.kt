@@ -34,55 +34,10 @@ import ru.xllifi.jetsnatcher.ui.settings.components.SettingSwitch
 import ru.xllifi.jetsnatcher.ui.settings.components.SettingTravel
 import ru.xllifi.jetsnatcher.ui.settings.components.defaultOnInputDialog
 
-interface SettingsGroupScope {
-  fun settingSwitch(
-    title: String,
-    description: String?,
-    checked: Boolean,
-    onCheckedChange: (newValue: Boolean) -> Unit,
-  )
-
-  fun settingSlider(
-    title: String,
-    description: String?,
-    value: Float,
-    onValueChange: (newValue: Float) -> Unit,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    @IntRange steps: Int = 0,
-    showDecimal: Boolean = true,
-    onInputDialog: OnInputDialog = defaultOnInputDialog,
-  )
-
-  fun settingButton(
-    title: String,
-    description: String?,
-    onClick: () -> Unit,
-    trailingIcon: ImageVector? = null,
-  )
-
-  fun <T> settingDoubleActionList(
-    label: String,
-    buttonText: String?,
-    buttonIcon: ImageVector?,
-    onButtonClick: () -> Unit,
-    items: List<T>,
-    itemTitleTransform: (T) -> String,
-    itemDescriptionTransform: (T) -> String,
-    itemPrimaryActionIcon: ImageVector?,
-    itemSecondaryActionIcon: ImageVector?,
-    onItemPrimaryActionClick: ((element: T) -> Unit)?,
-    onItemSecondaryActionClick: ((element: T) -> Unit)?,
-  )
-
-  fun settingCustom(
-    content: @Composable () -> Unit,
-  )
-}
-
-class SettingsGroupScopeImpl : SettingsGroupScope {
+class SettingsGroupScope {
   val items = mutableListOf<@Composable () -> Unit>()
 
-  override fun settingSwitch(
+  fun settingSwitch(
     title: String,
     description: String?,
     checked: Boolean,
@@ -98,15 +53,15 @@ class SettingsGroupScopeImpl : SettingsGroupScope {
     })
   }
 
-  override fun settingSlider(
+  fun settingSlider(
     title: String,
     description: String?,
     value: Float,
     onValueChange: (newValue: Float) -> Unit,
-    valueRange: ClosedFloatingPointRange<Float>,
-    steps: Int,
-    showDecimal: Boolean,
-    onInputDialog: OnInputDialog
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    @IntRange steps: Int = 0,
+    showDecimal: Boolean = true,
+    onInputDialog: OnInputDialog = defaultOnInputDialog,
   ) {
     items.add({
       SettingSlider(
@@ -122,11 +77,11 @@ class SettingsGroupScopeImpl : SettingsGroupScope {
     })
   }
 
-  override fun settingButton(
+  fun settingButton(
     title: String,
     description: String?,
     onClick: () -> Unit,
-    trailingIcon: ImageVector?,
+    trailingIcon: ImageVector? = null,
   ) {
     items.add({
       SettingTravel(
@@ -138,7 +93,7 @@ class SettingsGroupScopeImpl : SettingsGroupScope {
     })
   }
   
-  override fun <T> settingDoubleActionList(
+  fun <T> settingDoubleActionList(
     label: String,
     buttonText: String?,
     buttonIcon: ImageVector?,
@@ -168,7 +123,7 @@ class SettingsGroupScopeImpl : SettingsGroupScope {
     })
   }
 
-  override fun settingCustom(content: @Composable (() -> Unit)) {
+  fun settingCustom(content: @Composable (() -> Unit)) {
     items.add(content)
   }
 }
@@ -213,7 +168,7 @@ fun SettingsGroup(
         )
       }
     }
-    val scope = remember { SettingsGroupScopeImpl() }
+    val scope = remember { SettingsGroupScope() }
     scope.items.clear()
     scope.content()
     Column(

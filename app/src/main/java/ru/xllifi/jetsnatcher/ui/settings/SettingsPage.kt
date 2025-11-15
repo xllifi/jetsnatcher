@@ -32,22 +32,10 @@ import androidx.compose.ui.unit.dp
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.extensions.PreviewSetup
 
-interface SettingsPageScope {
-  fun group(
-    title: (@Composable (modifier: Modifier) -> Unit)?,
-    content: SettingsGroupScope.() -> Unit,
-  )
-
-  fun group(
-    title: String,
-    content: SettingsGroupScope.() -> Unit,
-  )
-}
-
-class SettingsPageScopeImpl : SettingsPageScope {
+class SettingsPageScope {
   val groups = mutableListOf<@Composable () -> Unit>()
 
-  override fun group(
+  fun group(
     title: @Composable ((modifier: Modifier) -> Unit)?,
     content: (SettingsGroupScope.() -> Unit)
   ) {
@@ -59,7 +47,7 @@ class SettingsPageScopeImpl : SettingsPageScope {
     })
   }
 
-  override fun group(
+  fun group(
     title: String,
     content: (SettingsGroupScope.() -> Unit)
   ) {
@@ -108,7 +96,7 @@ fun SettingsPage(
         .padding(16.dp)
         .padding(innerPadding),
     ) {
-      val scope = remember { SettingsPageScopeImpl() }
+      val scope = remember { SettingsPageScope() }
       scope.groups.clear()
       scope.content()
       LazyColumn(
