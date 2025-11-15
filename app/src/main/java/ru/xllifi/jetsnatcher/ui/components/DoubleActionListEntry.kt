@@ -44,7 +44,7 @@ import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 fun DoubleActionListEntry(
   modifier: Modifier = Modifier,
   title: String,
-  description: String,
+  description: String?,
   primaryActionIcon: ImageVector?,
   secondaryActionIcon: ImageVector?,
   onPrimaryActionClick: (() -> Unit)?,
@@ -99,11 +99,13 @@ fun DoubleActionListEntry(
           style = MaterialTheme.typography.titleMediumEmphasized.copy(lineHeight = 14.sp),
           color = colors.primaryActionTitleColor,
         )
-        Text(
-          text = description,
-          style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 14.sp),
-          color = colors.primaryActionDescriptionColor,
-        )
+        if (description != null) {
+          Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 14.sp),
+            color = colors.primaryActionDescriptionColor,
+          )
+        }
       }
     }
     if (onSecondaryActionClick != null && secondaryActionIcon != null) {

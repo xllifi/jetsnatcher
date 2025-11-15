@@ -1,13 +1,12 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
-package ru.xllifi.jetsnatcher.ui.settings.components
+package ru.xllifi.jetsnatcher.ui.generic.controls
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -16,9 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
@@ -36,7 +33,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.extensions.pxToDp
 import ru.xllifi.jetsnatcher.ui.components.DoubleActionListEntry
@@ -45,8 +41,8 @@ import ru.xllifi.jetsnatcher.ui.settings.SettingDefaults.settingModifier
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
 @Composable
-fun <T> SettingDoubleActionList(
-  label: String,
+fun <T> ControlDoubleActionList(
+  title: String,
   buttonText: String?,
   buttonIcon: ImageVector?,
   onButtonClick: () -> Unit,
@@ -55,6 +51,33 @@ fun <T> SettingDoubleActionList(
   itemDescriptionTransform: (T) -> String,
   itemPrimaryActionIcon: ImageVector?,
   itemSecondaryActionIcon: ImageVector?,
+  onItemPrimaryActionClick: ((element: T) -> Unit)?,
+  onItemSecondaryActionClick: ((element: T) -> Unit)?,
+) = ControlDoubleActionList<T>(
+  title = title,
+  buttonText = buttonText,
+  buttonIcon = buttonIcon,
+  onButtonClick = onButtonClick,
+  items = items,
+  itemTitleTransform = itemTitleTransform,
+  itemDescriptionTransform = itemDescriptionTransform,
+  itemPrimaryActionIconTransform = { itemPrimaryActionIcon },
+  itemSecondaryActionIconTransform = { itemSecondaryActionIcon },
+  onItemPrimaryActionClick = onItemPrimaryActionClick,
+  onItemSecondaryActionClick = onItemSecondaryActionClick,
+)
+
+@Composable
+fun <T> ControlDoubleActionList(
+  title: String,
+  buttonText: String?,
+  buttonIcon: ImageVector?,
+  onButtonClick: () -> Unit,
+  items: List<T>,
+  itemTitleTransform: (T) -> String,
+  itemDescriptionTransform: (T) -> String?,
+  itemPrimaryActionIconTransform: (T) -> ImageVector?,
+  itemSecondaryActionIconTransform: (T) -> ImageVector?,
   onItemPrimaryActionClick: ((element: T) -> Unit)?,
   onItemSecondaryActionClick: ((element: T) -> Unit)?,
 ) {
@@ -68,7 +91,7 @@ fun <T> SettingDoubleActionList(
       verticalAlignment = Alignment.CenterVertically,
     ) {
       Text(
-        text = label,
+        text = title,
         style = MaterialTheme.typography.titleMediumEmphasized.copy(lineHeight = TextUnit.Unspecified),
         color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier
@@ -101,14 +124,10 @@ fun <T> SettingDoubleActionList(
         DoubleActionListEntry(
           title = itemTitleTransform(element),
           description = itemDescriptionTransform(element),
-          primaryActionIcon = itemPrimaryActionIcon,
-          onPrimaryActionClick =
-            if (onItemPrimaryActionClick != null) ({ onItemPrimaryActionClick(element) })
-            else null,
-          secondaryActionIcon = itemSecondaryActionIcon,
-          onSecondaryActionClick =
-            if (onItemSecondaryActionClick != null) ({ onItemSecondaryActionClick(element) })
-            else null,
+          primaryActionIcon = itemPrimaryActionIconTransform(element),
+          onPrimaryActionClick = { onItemPrimaryActionClick?.invoke(element) },
+          secondaryActionIcon = itemSecondaryActionIconTransform(element),
+          onSecondaryActionClick = { onItemSecondaryActionClick?.invoke(element) },
           colors = DoubleActionListEntryDefaults.colors().copy(
             backgroundColor = MaterialTheme.colorScheme.surfaceContainerLow,
           )
@@ -120,10 +139,10 @@ fun <T> SettingDoubleActionList(
 
 @Composable
 @FullPreview
-fun SettingListPreview() {
+fun ControlListPreview() {
   JetSnatcherTheme {
-    SettingDoubleActionList(
-      label = "Preview setting",
+    ControlDoubleActionList(
+      title = "Preview setting",
       buttonText = "Add a tag",
       buttonIcon = Icons.Outlined.Add,
       onButtonClick = {},

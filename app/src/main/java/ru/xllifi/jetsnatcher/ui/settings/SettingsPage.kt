@@ -31,28 +31,30 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.extensions.PreviewSetup
+import ru.xllifi.jetsnatcher.ui.generic.ControlsGroup
+import ru.xllifi.jetsnatcher.ui.generic.ControlsGroupScope
 
 class SettingsPageScope {
   val groups = mutableListOf<@Composable () -> Unit>()
 
-  fun group(
+  fun controlsGroup(
     title: @Composable ((modifier: Modifier) -> Unit)?,
-    content: (SettingsGroupScope.() -> Unit)
+    content: (ControlsGroupScope.() -> Unit)
   ) {
     groups.add({
-      SettingsGroup(
+      ControlsGroup(
         title = title,
         content = content
       )
     })
   }
 
-  fun group(
+  fun controlsGroup(
     title: String,
-    content: (SettingsGroupScope.() -> Unit)
+    content: (ControlsGroupScope.() -> Unit)
   ) {
     groups.add({
-      SettingsGroup(
+      ControlsGroup(
         title = title,
         content = content
       )
@@ -79,11 +81,11 @@ fun SettingsPage(
               TooltipDefaults.rememberTooltipPositionProvider(
                 TooltipAnchorPosition.Above
               ),
-            tooltip = { PlainTooltip { Text("Menu") } },
+            tooltip = { PlainTooltip { Text("Back") } },
             state = rememberTooltipState(),
           ) {
             IconButton(onClick = onBack) {
-              Icon(imageVector = Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Menu")
+              Icon(imageVector = Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
             }
           }
         },
@@ -121,28 +123,28 @@ private fun SettingsPagePreview() {
       title = "Settings page",
       onBack = {},
     ) {
-      group("Some group") {
-        settingSwitch(
+      controlsGroup("Some group") {
+        controlSwitch(
           title = "Switch",
           description = "Some boolean setting!",
           checked = checked,
           onCheckedChange = { checked = it }
         )
-        settingButton(
+        controlButton(
           title = "Travel setting",
           description = "Takes you to another screen",
           onClick = {}
         )
       }
-      group("Another group") {
-        settingSlider(
+      controlsGroup("Another group") {
+        controlSlider(
           title = "Slider setting",
           description = "For number settings",
           value = 15f,
           onValueChange = {},
           valueRange = 0f..30f,
         )
-        settingButton(
+        controlButton(
           title = "Travel setting",
           description = "Takes you to another screen",
           onClick = {}

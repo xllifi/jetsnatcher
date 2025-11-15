@@ -1,10 +1,8 @@
 package ru.xllifi.jetsnatcher.ui.settings.pages
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -15,7 +13,7 @@ import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.extensions.PreviewSetup
 import ru.xllifi.jetsnatcher.proto.SettingsSerializer
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
-import ru.xllifi.jetsnatcher.ui.settings.components.OnInputDialog
+import ru.xllifi.jetsnatcher.ui.generic.controls.OnInputDialog
 import ru.xllifi.jetsnatcher.ui.settings.SettingsPage
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -34,8 +32,8 @@ fun GeneralSettingsPage(
     title = "Settings",
     onBack = onBack,
   ) {
-    group("Post list") {
-      settingSlider(
+    controlsGroup("Post list") {
+      controlSlider(
         title = "Posts per content load",
         description = "How many posts to request from a provider. Actual amount of posts may be lower depending on provider's limits.",
         value = settingsState.pageSize.toFloat(),
@@ -53,7 +51,7 @@ fun GeneralSettingsPage(
         showDecimal = false,
         onInputDialog = onInputDialog,
       )
-      settingSwitch(
+      controlSwitch(
         title = "Show post info in grid view", // TODO: translate
         description = "Whether to show some general post info below each card in post view", // TODO: translate
         checked = settingsState.showCardInfo,
@@ -68,8 +66,8 @@ fun GeneralSettingsPage(
         }
       )
     }
-    group("Post view") {
-      settingSlider(
+    controlsGroup("Post view") {
+      controlSlider(
         "Double tap threshold", // TODO: translate
         "How fast you should double-tap the screen for it to register as double tap", // TODO: translate
         value = settingsState.doubleTapThreshold.toFloat(),
@@ -88,14 +86,14 @@ fun GeneralSettingsPage(
         onInputDialog = onInputDialog,
       )
     }
-    group("Miscellaneous") {
-      settingButton(
+    controlsGroup("Miscellaneous") {
+      controlButton(
         title = "Manage providers", // TODO: translate
         description = "Open the provider list to edit and delete providers", // TODO: translate
         onClick = onManageProviders,
         trailingIcon = Icons.AutoMirrored.Default.ArrowForward,
       )
-      settingButton(
+      controlButton(
         title = "Manage blacklisted tags", // TODO: translate
         description = "Open the blacklisted tags list to add or remove tags", // TODO: translate
         onClick = onManageBlacklist,

@@ -74,9 +74,8 @@ import ru.xllifi.jetsnatcher.extensions.PreviewSetup
 import ru.xllifi.jetsnatcher.extensions.conditional
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserViewModel
 import ru.xllifi.jetsnatcher.proto.settings.ProviderProto
-import ru.xllifi.jetsnatcher.ui.components.DoubleActionListEntry
 import ru.xllifi.jetsnatcher.ui.components.Tag
-import ru.xllifi.jetsnatcher.ui.settings.components.SettingDoubleActionList
+import ru.xllifi.jetsnatcher.ui.generic.controls.ControlDoubleActionList
 
 val isUrlRegex = Regex("^(https?://)?.+\\.[a-z]{2,6}(/.*)?$")
 val hostnameRegex = Regex("^(?:https?://)?(?:www\\.)?([^/]+)")
@@ -284,8 +283,8 @@ fun PostDetails(
           .clip(MaterialTheme.shapes.large)
       ) {
         // TODO: design an unique component for links
-        SettingDoubleActionList(
-          label = "Links",
+        ControlDoubleActionList(
+          title = "Links",
           buttonText = null,
           buttonIcon = null,
           onButtonClick = {},

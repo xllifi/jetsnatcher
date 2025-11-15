@@ -62,12 +62,14 @@ import kotlinx.coroutines.runBlocking
 import ru.xllifi.jetsnatcher.extensions.rememberRoundedCornerNavEntryDecorator
 import ru.xllifi.jetsnatcher.navigation.screen.main.Browser
 import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserNavKey
+import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.dialog.ProviderEditDialogNavKey
+import ru.xllifi.jetsnatcher.ui.dialog.dialogsNavigation
+import ru.xllifi.jetsnatcher.ui.forms.AutoFormEditNavKey
+import ru.xllifi.jetsnatcher.ui.forms.AutoFormEditPage
 import ru.xllifi.jetsnatcher.ui.settings.SettingsNavigation
 import ru.xllifi.jetsnatcher.ui.settings.pages.defaultProviderType
 import ru.xllifi.jetsnatcher.ui.settings.settingsNavigation
-import ru.xllifi.jetsnatcher.proto.settingsDataStore
-import ru.xllifi.jetsnatcher.ui.dialog.dialogsNavigation
 import java.util.concurrent.CancellationException
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -80,7 +82,8 @@ fun NavRoot(
     settingsDataStore.data.map { it.providers.firstOrNull() }.firstOrNull()
   }
 
-  val backStack = rememberNavBackStack(BrowserNavKey(firstProvider(), emptyList()))
+  val backStack =
+    rememberNavBackStack(BrowserNavKey(firstProvider(), emptyList()))
   val drawerState = rememberDrawerState(
     initialValue = DrawerValue.Closed
   )
@@ -253,6 +256,15 @@ fun NavRoot(
         dialogsNavigation(
           backStack = backStack
         )
+        entry<AutoFormEditNavKey<Any>> { key ->
+          AutoFormEditPage(
+            title = key.title,
+            onBack = { backStack.removeAt(backStack.lastIndex) },
+            onSave = key.onSave,
+            map = key.map,
+            customTransforms = key.customTransforms,
+          )
+        }
       },
     )
   }

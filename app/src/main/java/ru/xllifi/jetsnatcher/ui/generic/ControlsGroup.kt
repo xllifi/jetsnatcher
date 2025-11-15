@@ -1,13 +1,26 @@
-package ru.xllifi.jetsnatcher.ui.settings
+package ru.xllifi.jetsnatcher.ui.generic
 
 import android.annotation.SuppressLint
 import androidx.annotation.IntRange
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
@@ -17,34 +30,33 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ru.xllifi.jetsnatcher.extensions.FullPreview
 import ru.xllifi.jetsnatcher.extensions.PreviewSetup
-import ru.xllifi.jetsnatcher.ui.settings.components.OnInputDialog
-import ru.xllifi.jetsnatcher.ui.settings.components.SettingDoubleActionList
-import ru.xllifi.jetsnatcher.ui.settings.components.SettingSlider
-import ru.xllifi.jetsnatcher.ui.settings.components.SettingSwitch
-import ru.xllifi.jetsnatcher.ui.settings.components.SettingTravel
-import ru.xllifi.jetsnatcher.ui.settings.components.defaultOnInputDialog
+import ru.xllifi.jetsnatcher.ui.generic.controls.ControlButton
+import ru.xllifi.jetsnatcher.ui.generic.controls.ControlDoubleActionList
+import ru.xllifi.jetsnatcher.ui.generic.controls.ControlSlider
+import ru.xllifi.jetsnatcher.ui.generic.controls.ControlSwitch
+import ru.xllifi.jetsnatcher.ui.generic.controls.ControlTextField
+import ru.xllifi.jetsnatcher.ui.generic.controls.OnInputDialog
+import ru.xllifi.jetsnatcher.ui.generic.controls.defaultOnInputDialog
 
-class SettingsGroupScope {
+class ControlsGroupScope {
   val items = mutableListOf<@Composable () -> Unit>()
 
-  fun settingSwitch(
+  fun controlSwitch(
     title: String,
     description: String?,
     checked: Boolean,
     onCheckedChange: (newValue: Boolean) -> Unit
   ) {
     items.add({
-      SettingSwitch(
+      ControlSwitch(
         title = title,
         description = description,
         checked = checked,
@@ -53,7 +65,7 @@ class SettingsGroupScope {
     })
   }
 
-  fun settingSlider(
+  fun controlSlider(
     title: String,
     description: String?,
     value: Float,
@@ -64,7 +76,7 @@ class SettingsGroupScope {
     onInputDialog: OnInputDialog = defaultOnInputDialog,
   ) {
     items.add({
-      SettingSlider(
+      ControlSlider(
         title = title,
         description = description,
         value = value,
@@ -77,14 +89,14 @@ class SettingsGroupScope {
     })
   }
 
-  fun settingButton(
+  fun controlButton(
     title: String,
     description: String?,
     onClick: () -> Unit,
     trailingIcon: ImageVector? = null,
   ) {
     items.add({
-      SettingTravel(
+      ControlButton(
         title = title,
         description = description,
         onClick = onClick,
@@ -92,48 +104,101 @@ class SettingsGroupScope {
       )
     })
   }
-  
-  fun <T> settingDoubleActionList(
-    label: String,
+  fun <T> controlDoubleActionList(
+    title: String,
     buttonText: String?,
     buttonIcon: ImageVector?,
     onButtonClick: () -> Unit,
     items: List<T>,
     itemTitleTransform: (T) -> String,
-    itemDescriptionTransform: (T) -> String,
+    itemDescriptionTransform: (T) -> String?,
     itemPrimaryActionIcon: ImageVector?,
     itemSecondaryActionIcon: ImageVector?,
     onItemPrimaryActionClick: ((element: T) -> Unit)?,
     onItemSecondaryActionClick: ((element: T) -> Unit)?,
+  ) = controlDoubleActionList<T>(
+    title = title,
+    buttonText = buttonText,
+    buttonIcon = buttonIcon,
+    onButtonClick = onButtonClick,
+    items = items,
+    itemTitleTransform = itemTitleTransform,
+    itemDescriptionTransform = itemDescriptionTransform,
+    itemPrimaryActionIconTransform = { itemPrimaryActionIcon },
+    itemSecondaryActionIconTransform = { itemSecondaryActionIcon },
+    onItemPrimaryActionClick = onItemPrimaryActionClick,
+    onItemSecondaryActionClick = onItemSecondaryActionClick,
+  )
+
+  fun <T> controlDoubleActionList(
+    title: String,
+    buttonText: String?,
+    buttonIcon: ImageVector?,
+    onButtonClick: () -> Unit,
+    items: List<T>,
+    itemTitleTransform: (T) -> String,
+    itemDescriptionTransform: (T) -> String?,
+    itemPrimaryActionIconTransform: (T) -> ImageVector?,
+    itemSecondaryActionIconTransform: (T) -> ImageVector?,
+    onItemPrimaryActionClick: ((element: T) -> Unit)?,
+    onItemSecondaryActionClick: ((element: T) -> Unit)?,
   ) {
     this.items.add({
-      SettingDoubleActionList(
-        label = label,
+      ControlDoubleActionList(
+        title = title,
         buttonText = buttonText,
         buttonIcon = buttonIcon,
         onButtonClick = onButtonClick,
         items = items,
         itemTitleTransform = itemTitleTransform,
         itemDescriptionTransform = itemDescriptionTransform,
-        itemPrimaryActionIcon = itemPrimaryActionIcon,
-        itemSecondaryActionIcon = itemSecondaryActionIcon,
+        itemPrimaryActionIconTransform = itemPrimaryActionIconTransform,
+        itemSecondaryActionIconTransform = itemSecondaryActionIconTransform,
         onItemPrimaryActionClick = onItemPrimaryActionClick,
         onItemSecondaryActionClick = onItemSecondaryActionClick,
       )
     })
   }
 
-  fun settingCustom(content: @Composable (() -> Unit)) {
+  fun controlTextField(
+    title: String,
+    description: String?,
+    value: String,
+    onValueChange: (String) -> Unit,
+    onKeyboardDone: (String) -> Unit = onValueChange,
+    icon: ImageVector? = null,
+    placeholder: String? = null,
+    label: String? = null,
+    acceptableCharactersRegex: Regex? = null,
+    singleLine: Boolean = false,
+  ) {
+    this.items.add({
+      ControlTextField(
+        title = title,
+        description = description,
+        value = value,
+        onValueChange = onValueChange,
+        onKeyboardDone = onKeyboardDone,
+        icon = icon,
+        placeholder = placeholder,
+        label = label,
+        acceptableCharactersRegex = acceptableCharactersRegex,
+        singleLine = singleLine,
+      )
+    })
+  }
+
+  fun controlCustom(content: @Composable (() -> Unit)) {
     items.add(content)
   }
 }
 
 @Composable
-fun SettingsGroup(
+fun ControlsGroup(
   title: String,
-  content: SettingsGroupScope.() -> Unit,
+  content: ControlsGroupScope.() -> Unit,
 ) {
-  SettingsGroup(
+  ControlsGroup(
     title = {
       Text(
         modifier = it,
@@ -145,12 +210,13 @@ fun SettingsGroup(
 }
 
 @Composable
-fun SettingsGroup(
+fun ControlsGroup(
+  modifier: Modifier = Modifier,
   title: (@Composable (modifier: Modifier) -> Unit)?,
-  content: SettingsGroupScope.() -> Unit,
+  content: ControlsGroupScope.() -> Unit,
 ) {
   Column(
-    modifier = Modifier
+    modifier = modifier
       .fillMaxWidth(),
   ) {
     if (title != null) {
@@ -168,7 +234,7 @@ fun SettingsGroup(
         )
       }
     }
-    val scope = remember { SettingsGroupScope() }
+    val scope = remember { ControlsGroupScope() }
     scope.items.clear()
     scope.content()
     Column(
@@ -176,9 +242,7 @@ fun SettingsGroup(
         .clip(MaterialTheme.shapes.large),
       verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-      for (el in scope.items) {
-        el()
-      }
+      scope.items.forEach { it() }
     }
   }
 }
@@ -186,30 +250,37 @@ fun SettingsGroup(
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 @FullPreview
-private fun SettingsGroupPreview() {
+private fun ControlsGroupPreview() {
   PreviewSetup {
     Scaffold {
       Box(
         modifier = Modifier
           .padding(16.dp),
       ) {
-        var checked by remember { mutableStateOf(false) }
-        SettingsGroup(
-          title = "Settings group"
+        ControlsGroup(
+          title = "Controls group"
         ) {
-          settingSwitch(
+          controlTextField(
+            title = "Text field",
+            description = "Something to enter text",
+            value = "InitVal",
+            onValueChange = { },
+            icon = Icons.Default.TextFields,
+          )
+          controlSwitch(
             title = "Switch",
-            description = "Some boolean setting!",
-            checked = checked,
-            onCheckedChange = { checked = it }
+            description = "Some boolean control!",
+            checked = false,
+            onCheckedChange = { }
           )
-          settingButton(
-            title = "Travel setting",
+          controlButton(
+            title = "Travel control",
             description = "Takes you to another screen",
-            onClick = {}
+            onClick = {},
+            trailingIcon = Icons.AutoMirrored.Default.ArrowForward,
           )
-          settingDoubleActionList(
-            label = "Preview setting. Long title to go on a second line and a third, please!!",
+          controlDoubleActionList(
+            title = "Preview control. Long title to go on a second line and a third, please!!",
             buttonText = "Add a tag",
             buttonIcon = Icons.Outlined.Add,
             onButtonClick = {},

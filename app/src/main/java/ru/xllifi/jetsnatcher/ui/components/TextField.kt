@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
@@ -45,19 +47,20 @@ import ru.xllifi.jetsnatcher.extensions.conditional
 fun TextField(
   modifier: Modifier = Modifier,
   value: String,
-  onValueChange: (newVal: String) -> Unit,
-  onKeyboardDone: (value: String) -> Unit,
+  onValueChange: (String) -> Unit,
+  onKeyboardDone: (String) -> Unit = onValueChange,
   icon: ImageVector? = null,
   placeholder: String? = null,
   label: String? = null,
   acceptableCharactersRegex: Regex? = null,
   singleLine: Boolean = false,
+  colors: TextFieldColors = TextFieldDefaults.colors(),
 ) {
   BasicTextField(
     modifier = modifier
       .fillMaxWidth()
       .clip(MaterialTheme.shapes.small)
-      .background(MaterialTheme.colorScheme.surfaceContainer),
+      .background(colors.backgroundColor),
     value = value,
     onValueChange = { value ->
       if (acceptableCharactersRegex != null) {
@@ -72,11 +75,11 @@ fun TextField(
     ),
     keyboardActions = KeyboardActions { onKeyboardDone(value) },
     textStyle = MaterialTheme.typography.bodyLarge.copy(
-      color = MaterialTheme.colorScheme.onSurface,
+      color = colors.textColor,
       fontSize = 16.sp,
       lineHeight = 16.sp,
     ),
-    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+    cursorBrush = SolidColor(colors.cursorColor),
     decorationBox = { innerTextField ->
       if (label != null) {
         val labelSp = with(LocalDensity.current) {
@@ -85,7 +88,7 @@ fun TextField(
         Text(
           text = label,
           style = MaterialTheme.typography.labelMedium.copy(
-            color = MaterialTheme.colorScheme.onSurface.copy(0.4f),
+            color = colors.labelColor,
             fontSize = labelSp,
             lineHeight = labelSp,
           ),
@@ -108,7 +111,7 @@ fun TextField(
           Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = colors.iconColor,
             modifier = Modifier.size(20.dp)
           )
         }
@@ -117,7 +120,7 @@ fun TextField(
             Text(
               text = placeholder,
               style = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onSurface.copy(0.4f),
+                color = colors.placeholderColor,
                 fontSize = 16.sp,
                 lineHeight = 16.sp,
               ),
@@ -147,3 +150,30 @@ private fun TextFieldPreview() {
     )
   }
 }
+
+object TextFieldDefaults {
+  @Composable
+  fun colors(): TextFieldColors =
+    MaterialTheme.colorScheme.defaultTextFieldColors
+
+  val ColorScheme.defaultTextFieldColors: TextFieldColors
+    get() {
+      return TextFieldColors(
+        backgroundColor = this.surfaceContainer,
+        cursorColor = this.primary,
+        textColor = this.primary,
+        iconColor = this.primary,
+        labelColor = this.onSurface.copy(0.4f),
+        placeholderColor = this.onSurface.copy(0.4f),
+      )
+    }
+}
+
+data class TextFieldColors(
+  val backgroundColor: Color,
+  val cursorColor: Color,
+  val textColor: Color,
+  val iconColor: Color,
+  val labelColor: Color,
+  val placeholderColor: Color,
+)

@@ -1,7 +1,6 @@
 package ru.xllifi.jetsnatcher.ui.settings.pages
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Tag
@@ -15,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.DataStoreFactory
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import ru.xllifi.jetsnatcher.extensions.FullPreviewSysUi
@@ -78,9 +76,9 @@ fun BlacklistSettingsPage(
     title = "Blacklist",
     onBack = onBack,
   ) {
-    group(null) {
-      settingDoubleActionList(
-        label = "Blacklisted tags",
+    controlsGroup(null) {
+      controlDoubleActionList(
+        title = "Blacklisted tags",
         buttonText = "Add tag",
         buttonIcon = Icons.Outlined.Add,
         onButtonClick = {

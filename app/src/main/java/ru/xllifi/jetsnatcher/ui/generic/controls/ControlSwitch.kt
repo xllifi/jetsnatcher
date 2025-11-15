@@ -1,8 +1,7 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
-package ru.xllifi.jetsnatcher.ui.settings.components
+package ru.xllifi.jetsnatcher.ui.generic.controls
 
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,7 +31,7 @@ import ru.xllifi.jetsnatcher.ui.settings.SettingDefaults.settingModifierClickabl
 import ru.xllifi.jetsnatcher.ui.theme.JetSnatcherTheme
 
 @Composable
-fun SettingSwitch(
+fun ControlSwitch(
   title: String,
   description: String?,
   checked: Boolean,
@@ -93,10 +92,10 @@ fun SettingSwitch(
 
 @Composable
 @FullPreview
-fun SettingSwitchPreview() {
+fun ControlSwitchPreview() {
   var checked by remember { mutableStateOf(true) }
   JetSnatcherTheme {
-    SettingSwitch(
+    ControlSwitch(
       title = "Preview setting",
       description = "Preview setting description.",
       checked,

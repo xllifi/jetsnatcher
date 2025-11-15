@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
-package ru.xllifi.jetsnatcher.ui.settings.components
+package ru.xllifi.jetsnatcher.ui.generic.controls
 
 import androidx.annotation.IntRange
 import androidx.compose.foundation.background
@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,7 +44,7 @@ val defaultOnInputDialog: OnInputDialog = { }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingSlider(
+fun ControlSlider(
   title: String,
   description: String?,
   value: Float,
@@ -54,12 +55,10 @@ fun SettingSlider(
   onInputDialog: OnInputDialog = defaultOnInputDialog,
 ) {
   Column(
-    modifier = Modifier
-      .settingModifier(),
-    verticalArrangement = Arrangement.spacedBy(4.dp),
+    modifier = Modifier.settingModifier(8.dp),
   ) {
     Column(
-      modifier = Modifier,
+      modifier = Modifier.padding(8.dp),
       verticalArrangement = Arrangement.Center,
     ) {
       Text(
@@ -76,6 +75,7 @@ fun SettingSlider(
       }
     }
     Row(
+      modifier = Modifier.padding(horizontal = 8.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -122,10 +122,10 @@ fun SettingSlider(
 
 @Composable
 @FullPreview
-fun SettingSliderPreview() {
+fun ControlSliderPreview() {
   JetSnatcherTheme {
     var value by remember { mutableFloatStateOf(2f) }
-    SettingSlider(
+    ControlSlider(
       title = "Preview setting",
       description = "Preview setting description. This text is supposed to describe what the option should do.",
       value = value,
