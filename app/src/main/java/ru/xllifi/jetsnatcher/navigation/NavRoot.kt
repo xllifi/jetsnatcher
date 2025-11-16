@@ -65,7 +65,7 @@ import ru.xllifi.jetsnatcher.navigation.screen.main.BrowserNavKey
 import ru.xllifi.jetsnatcher.proto.settingsDataStore
 import ru.xllifi.jetsnatcher.ui.dialog.ProviderEditDialogNavKey
 import ru.xllifi.jetsnatcher.ui.dialog.dialogsNavigation
-import ru.xllifi.jetsnatcher.ui.forms.AutoFormEditNavKey
+import ru.xllifi.jetsnatcher.ui.forms.AutoFormEditPageNavKey
 import ru.xllifi.jetsnatcher.ui.forms.AutoFormEditPage
 import ru.xllifi.jetsnatcher.ui.settings.SettingsNavigation
 import ru.xllifi.jetsnatcher.ui.settings.pages.defaultProviderType
@@ -256,7 +256,7 @@ fun NavRoot(
         dialogsNavigation(
           backStack = backStack
         )
-        entry<AutoFormEditNavKey<Any>> { key ->
+        entry<AutoFormEditPageNavKey<Any>> { key ->
           AutoFormEditPage(
             title = key.title,
             onBack = { backStack.removeAt(backStack.lastIndex) },

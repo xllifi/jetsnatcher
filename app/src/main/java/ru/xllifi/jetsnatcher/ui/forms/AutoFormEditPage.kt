@@ -14,7 +14,7 @@ import java.util.Locale
 import kotlin.collections.iterator
 
 @Serializable
-data class AutoFormEditNavKey<K>(
+data class AutoFormEditPageNavKey<K>(
   val title: String,
   val onSave: (Map<K, FormEditScope.ParamValue<*>>) -> Unit = {},
   @Contextual val map: Map<K, Any>,
